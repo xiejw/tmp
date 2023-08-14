@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"github.com/xiejw/tmp/cgo/liba"
+	"github.com/xiejw/tmp/cgo/libb"
+)
 
 func main() {
-        fmt.Printf("hello\n");
+	liba.SayHelloA()
+	libb.SayHelloB()
 }

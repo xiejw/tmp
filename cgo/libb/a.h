@@ -1,0 +1,2 @@
+void sayPromptFromB();
+void sayHelloFromB();
