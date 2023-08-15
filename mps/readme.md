@@ -4,7 +4,7 @@ The purpose of this experiment is to benchmark the performance of the different
 backends (cpu/ane/mps) with different implementations
 (pytorch/libtorch/Accelerate).
 
-See https://github.com/xiejw/y/blob/main/doc/sop.md for set up.
+See https://github.com/xiejw/y/blob/main/doc/sop.md#libtorch for set up.
 
 ### Benchmark PyTorch on macOS
 
@@ -38,6 +38,11 @@ c.matmul takes 0.608549
 This test is checking the performance with pytorch (arm64 + mps)
 
 ```
+# read matmul_torch.cc
+
+# make torch
+# ./demo
+
 libtorch mps
 c.matmul takes 0.176301
 

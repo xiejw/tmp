@@ -14,3 +14,6 @@ torch:
 
 fmt:
 	${FMT}
+
+clean:
+	rm -rf demo
