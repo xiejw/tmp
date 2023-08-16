@@ -8,7 +8,7 @@ ane:
 torch:
 	mkdir -p /tmp/build && \
 		Torch_DIR=~/Workspace/build/torch/install/ cmake -S . -B /tmp/build -DCMAKE_BUILD_TYPE=Release && \
-		make -C /tmp/build && \
+		make VERBOSE=1 -C /tmp/build && \
 		cp /tmp/build/torch_mps_cc demo && \
 		rm -rf /tmp/build
 
