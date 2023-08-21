@@ -1,5 +1,6 @@
-compile: example_a
+CMDS=example_a
 
+compile: ${CMDS}
 
 # linker flag is -ll not -lfl.
 #
@@ -13,3 +14,6 @@ lex.yy.c: example_a.l
 
 run_example_a: example_a
 	echo "begin hello thanks end" | ./example_a
+
+clean:
+	rm -rf ${CMDS}
