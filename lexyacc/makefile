@@ -1,6 +1,10 @@
 compile: example_a
 
-# macOS: -ll not -lfl
+
+# linker flag is -ll not -lfl.
+#
+# debian: sudo apt install libfl-dev
+# macOS: default library is installed,
 example_a: lex.yy.c
 	${CC} -o example_a $< -ll
 
