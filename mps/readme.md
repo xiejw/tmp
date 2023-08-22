@@ -6,6 +6,9 @@ backends (cpu/ane/mps) with different implementations
 
 See https://github.com/xiejw/y/blob/main/doc/sop.md#libtorch for set up.
 
+TODO: the metal shader version got started. It is developed under the `mps_obj`
+folder and not yet done.
+
 ### Benchmark PyTorch on macOS
 
 This test is checking the performance with pytorch (arm64 + mps)
