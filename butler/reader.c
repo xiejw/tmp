@@ -61,7 +61,6 @@ evaReaderClose(struct eva_reader_t *h)
         free(h);
 }
 
-// TODO: currently there is a bug the final line has one more empty line outputs.
 int
 evaReaderNextLine(struct eva_reader_t *handle, char *dst)
 {
@@ -91,7 +90,11 @@ evaReaderNextLine(struct eva_reader_t *handle, char *dst)
                 if (ldNextBufEof(handle)) {
                         handle->flag_eof = 1;
                         if (current_len == 0) {
-                                // Nothing left after the last EOL.
+                                // Nothing left after the last EOL. This is a
+                                // quite tricky case as lots of editors (vim)
+                                // and cmds (echo) automatically insert newline
+                                // for text file. To debug in hex, use xxd
+                                // <filename>.
                                 dst[current_len] = '\0';
                                 return 0;
                         } else {
