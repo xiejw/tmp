@@ -16,7 +16,7 @@ AlignAfterOpenBracket: Align
 # BEGIN xiejw Changed
 AlignConsecutiveMacros: true
 AlignConsecutiveAssignments: true
-AlignConsecutiveDeclarations: false
+AlignConsecutiveDeclarations: true
 # End xiejw Changed
 AlignEscapedNewlines: Left
 AlignOperands:   true
