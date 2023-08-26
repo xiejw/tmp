@@ -1,9 +1,4 @@
-/*
-See LICENSE folder for this sample’s licensing information.
-
-Abstract:
-An app that performs a simple calculation on a GPU.
-*/
+// vim: shiftwidth=8 tabstop=8 softtabstop=8
 
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
@@ -11,6 +6,8 @@ An app that performs a simple calculation on a GPU.
 #import <assert.h>
 
 #import "adder.h"
+
+#define N_ELEMS (4096 * 2)
 
 // This is the C version of the function that the sample
 // implements in Metal Shading Language.
@@ -33,11 +30,8 @@ int main(int argc, const char * argv[]) {
         assert(adder != NULL);
         NSLog(@"device prepared and function compiled");
 
-        // // Create buffers to hold data
-        // [adder prepareData];
-
-        // // Send a command to the GPU to perform the calculation.
-        // [adder sendComputeCommand];
+        adderPrepareData(adder, N_ELEMS);
+        adderRun(adder, N_ELEMS);
 
         NSLog(@"execution finished");
 exit:
