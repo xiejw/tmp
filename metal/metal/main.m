@@ -8,7 +8,9 @@ An app that performs a simple calculation on a GPU.
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 
-#import "MetalAdder.h"
+#import <assert.h>
+
+#import "adder.h"
 
 // This is the C version of the function that the sample
 // implements in Metal Shading Language.
@@ -27,18 +29,19 @@ int main(int argc, const char * argv[]) {
     @autoreleasepool {
 
         id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+        struct adder * adder = adderNew(device);
+        assert(adder != NULL);
+        NSLog(@"device prepared and function compiled");
 
-        // Create the custom object used to encapsulate the Metal code.
-        // Initializes objects to communicate with the GPU.
-        MetalAdder* adder = [[MetalAdder alloc] initWithDevice:device];
+        // // Create buffers to hold data
+        // [adder prepareData];
 
-        // Create buffers to hold data
-        [adder prepareData];
+        // // Send a command to the GPU to perform the calculation.
+        // [adder sendComputeCommand];
 
-        // Send a command to the GPU to perform the calculation.
-        [adder sendComputeCommand];
-
-        NSLog(@"Execution finished");
+        NSLog(@"execution finished");
+exit:
+        adderFree(adder);
     }
     return 0;
 }

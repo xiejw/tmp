@@ -1,4 +1,4 @@
-## Linear Alg on MPS
+## Linear Alg on Metal/MPS
 
 The purpose of this experiment is to benchmark the performance of the different
 backends (cpu/ane/mps) with different implementations
@@ -8,6 +8,10 @@ See https://github.com/xiejw/y/blob/main/doc/sop.md#libtorch for set up.
 
 TODO: the metal shader version got started. It is developed under the `mps_obj`
 folder and not yet done.
+
+Some lessons:
+- MPS is a  high level framework. It is not easy to undersand nor customize.
+- This means libtorch is not a good fit.
 
 ### Benchmark PyTorch on macOS
 

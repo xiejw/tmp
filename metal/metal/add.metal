@@ -1,13 +1,13 @@
-/*
-See LICENSE folder for this sample’s licensing information.
-
-Abstract:
-A shader that adds two arrays of floats.
-*/
+// vim: ft=c
+//
+// Abstract:
+// A shader that adds two arrays of floats.
 
 #include <metal_stdlib>
 using namespace metal;
-/// This is a Metal Shading Language (MSL) function equivalent to the add_arrays() C function, used to perform the calculation on a GPU.
+
+/// This is a Metal Shading Language (MSL) function equivalent to the
+/// add_arrays() C function, used to perform the calculation on a GPU.
 kernel void add_arrays(device const float* inA,
                        device const float* inB,
                        device float* result,
