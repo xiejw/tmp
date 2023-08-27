@@ -5,37 +5,28 @@
 
 #import <assert.h>
 
-#import "adder.h"
+#import "matmul_op.h"
 
-#define N_ELEMS (4096 * 2)
-
-// This is the C version of the function that the sample
-// implements in Metal Shading Language.
-void add_arrays(const float* inA,
-                const float* inB,
-                float* result,
-                int length)
-{
-    for (int index = 0; index < length ; index++)
-    {
-        result[index] = inA[index] + inB[index];
-    }
-}
+#define N_DIM (4096 * 2)
 
 int main(int argc, const char * argv[]) {
-    @autoreleasepool {
+        @autoreleasepool {
 
-        id<MTLDevice> device = MTLCreateSystemDefaultDevice();
-        struct adder * adder = adderNew(device);
-        assert(adder != NULL);
-        NSLog(@"device prepared and function compiled");
+                id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+                struct matmul_op * op = matmulOpNew(
+                                device,
+                                /*m=*/N_DIM,
+                                /*n=*/N_DIM,
+                                /*k=*/N_DIM);
+                assert(op != NULL);
+                NSLog(@"device prepared and function compiled");
 
-        adderPrepareData(adder, N_ELEMS);
-        adderRun(adder, N_ELEMS);
+                matmulOpPrepareData(op);
+                //matmulOpRun(op, N_ELEMS);
 
-        NSLog(@"execution finished");
+                NSLog(@"execution finished");
 exit:
-        adderFree(adder);
-    }
-    return 0;
+                matmulOpFree(op);
+        }
+        return 0;
 }

@@ -13,10 +13,10 @@ LDFLAGS=-framework Foundation -framework Metal -framework MetalPerformanceShader
 compile: ${BUILD} ${METAL_LIBS} ${CMD}
 	@echo "run with '.build/a.out'"
 
-${CMD}: adder.m adder.h main.m
-	clang++ -o ${BUILD}/adder.o -c adder.m ${CFLAGS} && \
+${CMD}: matmul_op.m matmul_op.h main.m
+	clang++ -o ${BUILD}/matmul_op.o -c matmul_op.m ${CFLAGS} && \
 	clang++ -o ${BUILD}/main.o -c main.m ${CFLAGS} && \
-	clang++ -o ${BUILD}/a.out ${BUILD}/main.o ${BUILD}/adder.o ${LDFLAGS}
+	clang++ -o ${BUILD}/a.out ${BUILD}/main.o ${BUILD}/matmul_op.o ${LDFLAGS}
 
 ${BUILD}:
 	mkdir -p ${BUILD}
