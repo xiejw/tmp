@@ -7,6 +7,7 @@
 
 #import "matmul_op.h"
 
+// be consistant with other tests.
 #define N_DIM (4096 * 2)
 
 int main(int argc, const char * argv[]) {
@@ -22,7 +23,7 @@ int main(int argc, const char * argv[]) {
                 NSLog(@"device prepared and function compiled");
 
                 matmulOpPrepareData(op);
-                //matmulOpRun(op, N_ELEMS);
+                matmulOpRun(op);
 
                 NSLog(@"execution finished");
 exit:

@@ -3,12 +3,12 @@
 
 BUILD = .build
 
-METAL_LIBS = ${BUILD}/add.metallib
+METAL_LIBS = ${BUILD}/matmul.metallib
 CMD        = ${BUILD}/a.out
 
-CFLAGS = -Wno-deprecated-declarations
+CFLAGS = -Wno-deprecated-declarations -O2 -DNDEBUG
 
-LDFLAGS=-framework Foundation -framework Metal -framework MetalPerformanceShaders -framework CoreGraphics
+LDFLAGS=-framework Foundation -framework Metal -framework CoreGraphics -framework Accelerate
 
 compile: ${BUILD} ${METAL_LIBS} ${CMD}
 	@echo "run with '.build/a.out'"
@@ -21,9 +21,9 @@ ${CMD}: matmul_op.m matmul_op.h main.m
 ${BUILD}:
 	mkdir -p ${BUILD}
 
-${BUILD}/add.metallib: add.metal
-	xcrun -sdk macosx metal -c add.metal -o ${BUILD}/add.air && \
-	       xcrun -sdk macosx metallib ${BUILD}/add.air -o ${BUILD}/add.metallib
+${BUILD}/matmul.metallib: matmul.metal
+	xcrun -sdk macosx metal -c matmul.metal -o ${BUILD}/matmul.air && \
+	       xcrun -sdk macosx metallib ${BUILD}/matmul.air -o ${BUILD}/matmul.metallib
 
 clean:
 	rm -rf ${BUILD}

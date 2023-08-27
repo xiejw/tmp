@@ -5,11 +5,10 @@
 // prototype
 //
 static void generateRandomFloatData(id<MTLBuffer> buffer, size_t nbytes);
-// static void encodeAddCommand(
-//                 struct matmul_op *p,
-//                 size_t nelems,
-//                 id<MTLComputeCommandEncoder> computeEncoder);
-// static void verifyResults(struct matmul_op *p, size_t nelems);
+static void encodeAddCommand(
+                struct matmul_op* op,
+                id<MTLComputeCommandEncoder> computeEncoder);
+static void verifyResults(struct matmul_op *op);
 
 //
 // struct def
@@ -19,11 +18,12 @@ struct matmul_op {
         int n;
         int k;
 
+        // heavy metal objects.
         id<MTLDevice> dev;
         id<MTLCommandQueue> que;
         id<MTLComputePipelineState> pip;
 
-        // Buffers to hold data.
+        // buffers to hold data.
         id<MTLBuffer> buf_a;
         id<MTLBuffer> buf_b;
         id<MTLBuffer> buf_c;
@@ -39,8 +39,8 @@ struct matmul_op * matmulOpNew(id<MTLDevice> device, int m, int n, int k) {
         NSError* error = nil;
 
         id<MTLLibrary> defaultLibrary = [
-                op->dev newLibraryWithFile: @".build/add.metallib"
-                                          error: &error];
+                op->dev newLibraryWithFile: @".build/matmul.metallib"
+                                     error: &error];
 
         if (defaultLibrary == nil) {
                 NSLog(@"Failed to find the default library. %s ",
@@ -50,7 +50,7 @@ struct matmul_op * matmulOpNew(id<MTLDevice> device, int m, int n, int k) {
         [defaultLibrary autorelease];
 
         id<MTLFunction> func = [
-                defaultLibrary newFunctionWithName: @"add_arrays"];
+                defaultLibrary newFunctionWithName: @"matmul_op"];
 
         if (func == nil) {
                 NSLog(@"Failed to find the matmul_op function.");
@@ -121,38 +121,30 @@ void matmulOpPrepareData(struct matmul_op* op) {
         generateRandomFloatData(op->buf_b, n*k);
 }
 
-// void matmulOpRun(struct matmul_op*p, size_t nelems) {
-//         // create a command buffer to hold commands.
-//         id<MTLCommandBuffer> commandBuffer = [
-//                 p->que commandBuffer];
-//         assert(commandBuffer != nil);
+void matmulOpRun(struct matmul_op* op) {
+        id<MTLCommandBuffer> commandBuffer = [op->que commandBuffer];
+        assert(commandBuffer != nil);
+
+        id<MTLComputeCommandEncoder> computeEncoder = [
+                commandBuffer computeCommandEncoder];
+        assert(computeEncoder != nil);
+
+        encodeAddCommand(op, computeEncoder);
+
+        [computeEncoder endEncoding];
+
+        NSLog(@"metal commit BEGIN\n");
+        [commandBuffer commit];
+        [commandBuffer waitUntilCompleted];
+        NSLog(@"metal commit END\n");
+
+        verifyResults(op);
+}
+
 //
-//         // start a compute pass.
-//         id<MTLComputeCommandEncoder> computeEncoder = [
-//                 commandBuffer computeCommandEncoder];
-//         assert(computeEncoder != nil);
+// impl of helpers
 //
-//         encodeAddCommand(p, nelems, computeEncoder);
-//
-//         // end the compute pass.
-//         [computeEncoder endEncoding];
-//
-//         // execute the command.
-//         [commandBuffer commit];
-//
-//         // Normally, you want to do other work in your app while the GPU is running,
-//         // but in this example, the code simply blocks until the calculation is complete.
-//         [commandBuffer waitUntilCompleted];
-//
-//         verifyResults(p, nelems);
-// }
-//
-//
-//
-// //
-// // impl of helpers
-// //
-//
+
 void generateRandomFloatData(id<MTLBuffer> buffer, size_t nbytes) {
         float* dataPtr = buffer.contents;
 
@@ -161,42 +153,106 @@ void generateRandomFloatData(id<MTLBuffer> buffer, size_t nbytes) {
         }
 }
 
-// void encodeAddCommand(
-//                 struct matmul_op *p,
-//                 size_t nelems,
-//                 id<MTLComputeCommandEncoder> computeEncoder) {
-//
-//         // encode the pipeline state object and its parameters.
-//         [computeEncoder setComputePipelineState: p->pip];
-//         [computeEncoder setBuffer: p->buf_a offset:0 atIndex:0];
-//         [computeEncoder setBuffer: p->buf_b offset:0 atIndex:1];
-//         [computeEncoder setBuffer: p->buf_c offset:0 atIndex:2];
-//
-//         MTLSize gridSize = MTLSizeMake(nelems, 1, 1);
-//
-//         // calculate a threadgroup size.
-//         NSUInteger threadGroupSize = p->pip.maxTotalThreadsPerThreadgroup;
-//         if (threadGroupSize > nelems) {
-//                 threadGroupSize = nelems;
-//         }
-//         MTLSize threadgroupSize = MTLSizeMake(threadGroupSize, 1, 1);
-//
-//         // Encode the compute command.
-//         [computeEncoder dispatchThreads:gridSize
-//                   threadsPerThreadgroup:threadgroupSize];
-// }
-//
-// void verifyResults(struct matmul_op *p, size_t nelems) {
-//         float* a = p->buf_a.contents;
-//         float* b = p->buf_b.contents;
-//         float* c = p->buf_c.contents;
-//
-//         for (size_t index = 0; index < nelems; index++) {
-//                 if (c[index] != (a[index] + b[index])) {
-//                         printf("Compute ERROR: index=%lu result=%g vs %g=a+b\n",
-//                                         index, c[index], a[index] + b[index]);
-//                         assert(c[index] == (a[index] + b[index]));
-//                 }
-//         }
-//         NSLog(@"compute results as expected\n");
-// }
+void encodeAddCommand(
+                struct matmul_op *op,
+                id<MTLComputeCommandEncoder> computeEncoder) {
+
+        int64_t m = op->m;
+        int64_t n = op->n;
+        int64_t k = op->k;
+        size_t len = sizeof(int64_t);
+
+        // encode the pipeline state object and its parameters.
+        [computeEncoder setComputePipelineState: op->pip];
+        [computeEncoder setBuffer: op->buf_a offset:0 atIndex:0];
+        [computeEncoder setBuffer: op->buf_b offset:0 atIndex:1];
+        [computeEncoder setBuffer: op->buf_c offset:0 atIndex:2];
+        [computeEncoder setBytes: &m length:len atIndex:3];
+        [computeEncoder setBytes: &n length:len atIndex:4];
+        [computeEncoder setBytes: &k length:len atIndex:5];
+
+        MTLSize gridSize = MTLSizeMake(m, n, 1);
+
+        // TODO: hard code now
+        //
+        // read this for details.
+        // - https://developer.apple.com/documentation/metal/compute_passes/calculating_threadgroup_and_grid_sizes?language=objc
+        // - https://developer.apple.com/documentation/metal/mtlcomputecommandencoder/1443142-setthreadgroupmemorylength?language=objc
+        NSUInteger threadGroupSize = op->pip.maxTotalThreadsPerThreadgroup;
+        NSUInteger simdGroupSize = op->pip.threadExecutionWidth;
+        NSUInteger threadGroupMemSize = op->pip.staticThreadgroupMemoryLength;
+        NSLog(@"max thread group size: %d\n", (int) threadGroupSize);
+        NSLog(@"simd group size      : %d\n", (int) simdGroupSize);
+        NSLog(@"thread group mem size: %d\n", (int) threadGroupMemSize);
+
+        // if (threadGroupSize > nelems) {
+        //         threadGroupSize = nelems;
+        // }
+
+        assert(32 * 32 <= threadGroupSize);
+        MTLSize threadgroupSize = MTLSizeMake(32, 32, 1);
+
+        [computeEncoder dispatchThreads:gridSize
+                  threadsPerThreadgroup:threadgroupSize];
+}
+
+#include <Accelerate/Accelerate.h>
+
+static  void matmul_op_host(
+                float* a,
+                float* b,
+                float* c,
+                int64_t m,
+                int64_t n,
+                int64_t k) {
+
+        // The following naive code is tooooo slow.
+        //        for (int64_t row = 0; row < m; row++) {
+        //                for (int64_t col = 0; col < n; col++) {
+        //                        float v = 0;
+        //                        for (int64_t i = 0; i < k; i++) {
+        //                                v += a[row * k + i] + b[i * n + col];
+        //                        }
+        //                        c[row * n + col] = v;
+        //                }
+        //        }
+        cblas_sgemm(
+                        CblasRowMajor,
+                        CblasNoTrans,
+                        CblasNoTrans,
+                        m,
+                        n,
+                        k,
+                        1.0,
+                        a,
+                        /*lda=*/m,
+                        b,
+                        /*ldb=*/k,
+                        0.0,
+                        c,
+                        /*ldc=*/m);
+}
+
+void verifyResults(struct matmul_op *op) {
+        float* a = op->buf_a.contents;
+        float* b = op->buf_b.contents;
+        float* c = op->buf_c.contents;
+
+        const int64_t m = op->m;
+        const int64_t n = op->n;
+        const int64_t k = op->k;
+
+        NSLog(@"generate expeced results on host\n");
+        float* c_host = malloc(sizeof(float) * m * n);
+        matmul_op_host(a, b, c_host, m, n, k);
+        NSLog(@"generate expeced results on host DONE\n");
+
+        for (size_t index = 0; index < m * n; index++) {
+                if (c_host[index] != c[index]) {
+                        printf("Compute ERROR: index=%lu\n", index);
+                        assert(c_host[index] == c[index]);
+                }
+        }
+        free(c_host);
+        NSLog(@"compute results as expected\n");
+}
