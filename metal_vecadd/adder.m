@@ -14,6 +14,11 @@ static void verifyResults(struct adder *p, size_t nelems);
 struct adder {
         id<MTLDevice> _mDevice;
 
+
+        // Note in Metal, command buffer and command encoder object are
+        // transient and designed for a single use. There creation methods
+        // return autoreleased objects.
+
         // The compute pipeline generated from the compute kernel in the .metal
         // shader file.
         id<MTLComputePipelineState> _mAddFunctionPSO;
@@ -44,6 +49,7 @@ struct adder * adderNew(id<MTLDevice> device) {
                                 [[error localizedDescription] UTF8String]);
                 return nil;
         }
+        [defaultLibrary autorelease];
 
         // load function
         id<MTLFunction> addFunction = [
@@ -53,14 +59,14 @@ struct adder * adderNew(id<MTLDevice> device) {
                 NSLog(@"Failed to find the adder function.");
                 return nil;
         }
+        [addFunction autorelease];
 
         // create a compute pipeline state object.
         adder->_mAddFunctionPSO = [
                 adder->_mDevice newComputePipelineStateWithFunction: addFunction
                                                               error: &error];
 
-        if (adder->_mAddFunctionPSO == nil)
-        {
+        if (adder->_mAddFunctionPSO == nil) {
                 //  If the Metal API validation is enabled, you can find out
                 //  more information about what went wrong.  (Metal API
                 //  validation is enabled by default when a debug build is run
@@ -71,8 +77,7 @@ struct adder * adderNew(id<MTLDevice> device) {
         }
 
         adder->_mCommandQueue = [adder->_mDevice newCommandQueue];
-        if (adder->_mCommandQueue == nil)
-        {
+        if (adder->_mCommandQueue == nil) {
                 NSLog(@"Failed to find the command queue.");
                 return nil;
         }
@@ -118,12 +123,13 @@ void adderPrepareData(struct adder* p, size_t nelems) {
 }
 
 void adderRun(struct adder*p, size_t nelems) {
-        // create a command buffer to hold commands.
+        // create a command buffer to hold commands. Command buffer is cheap
+        // and autoreleaed.
         id<MTLCommandBuffer> commandBuffer = [
                 p->_mCommandQueue commandBuffer];
         assert(commandBuffer != nil);
 
-        // start a compute pass.
+        // start a compute pass. Command Encoder is cheap and autoreleased.
         id<MTLComputeCommandEncoder> computeEncoder = [
                 commandBuffer computeCommandEncoder];
         assert(computeEncoder != nil);
