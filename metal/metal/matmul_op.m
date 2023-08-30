@@ -1,6 +1,9 @@
 // vim: shiftwidth=8 tabstop=8 softtabstop=8
 #import "matmul_op.h"
 
+// TODO tile
+#define TILE_SIZE 16
+
 //
 // prototype
 //
@@ -50,10 +53,12 @@ struct matmul_op * matmulOpNew(id<MTLDevice> device, int m, int n, int k) {
         [defaultLibrary autorelease];
 
         id<MTLFunction> func = [
-                defaultLibrary newFunctionWithName: @"matmul_op"];
+                // TODO tile
+                defaultLibrary newFunctionWithName: @"matmul_op_tile"];
 
         if (func == nil) {
-                NSLog(@"Failed to find the matmul_op function.");
+                // TODO tile
+                NSLog(@"Failed to find the matmul_op_tile function.");
                 return nil;
         }
         [func autorelease];
@@ -171,6 +176,10 @@ void encodeAddCommand(
         [computeEncoder setBytes: &n length:len atIndex:4];
         [computeEncoder setBytes: &k length:len atIndex:5];
 
+        // TODO tile
+        [computeEncoder setThreadgroupMemoryLength:sizeof(float)*2*TILE_SIZE*TILE_SIZE atIndex:0];
+
+        // TODO tile
         MTLSize gridSize = MTLSizeMake(m, n, 1);
 
         // TODO: hard code now
@@ -189,8 +198,8 @@ void encodeAddCommand(
         //         threadGroupSize = nelems;
         // }
 
-        assert(32 * 32 <= threadGroupSize);
-        MTLSize threadgroupSize = MTLSizeMake(32, 32, 1);
+        assert(TILE_SIZE * TILE_SIZE <= threadGroupSize);
+        MTLSize threadgroupSize = MTLSizeMake(TILE_SIZE, TILE_SIZE, 1);
 
         [computeEncoder dispatchThreads:gridSize
                   threadsPerThreadgroup:threadgroupSize];
@@ -251,8 +260,13 @@ void verifyResults(struct matmul_op *op) {
                 if (c_host[index] != c[index]) {
                         printf("Compute ERROR: index=%lu\n", index);
                         assert(c_host[index] == c[index]);
+                        goto exit;
                 }
         }
         free(c_host);
         NSLog(@"compute results as expected\n");
+        return;
+exit:
+        free(c_host);
+        NSLog(@"compute results failed to pass\n");
 }
