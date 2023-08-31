@@ -1,6 +1,8 @@
 // vim: shiftwidth=8 tabstop=8 softtabstop=8
 #import "matmul_op.h"
 
+#include <time.h>
+
 // TODO tile
 #define TILE_SIZE 16
 
@@ -12,6 +14,12 @@ static void encodeAddCommand(
                 struct matmul_op* op,
                 id<MTLComputeCommandEncoder> computeEncoder);
 static void verifyResults(struct matmul_op *op);
+
+static double eva_gettime_in_secs() {
+        struct timespec req;
+        clock_gettime(CLOCK_MONOTONIC, &req);
+        return (double)req.tv_sec + (double) req.tv_nsec / 1000 / 1000 / 1000;
+}
 
 //
 // struct def
@@ -135,12 +143,14 @@ void matmulOpRun(struct matmul_op* op) {
         assert(computeEncoder != nil);
 
         encodeAddCommand(op, computeEncoder);
-
         [computeEncoder endEncoding];
 
-        NSLog(@"metal commit BEGIN\n");
+        double start = eva_gettime_in_secs();
         [commandBuffer commit];
         [commandBuffer waitUntilCompleted];
+        double end = eva_gettime_in_secs();
+
+        NSLog(@"matmul takes %g secs", end - start);
         NSLog(@"metal commit END\n");
 
         verifyResults(op);
@@ -179,8 +189,8 @@ void encodeAddCommand(
         // TODO tile
         [computeEncoder setThreadgroupMemoryLength:sizeof(float)*2*TILE_SIZE*TILE_SIZE atIndex:0];
 
-        // TODO tile
-        MTLSize gridSize = MTLSizeMake(m, n, 1);
+        // TODO tile and groups
+        MTLSize gridSize = MTLSizeMake(n, m, 1);
 
         // TODO: hard code now
         //
