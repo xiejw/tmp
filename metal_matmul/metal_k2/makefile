@@ -13,6 +13,9 @@ LDFLAGS=-framework Foundation -framework Metal -framework CoreGraphics -framewor
 compile: ${BUILD} ${METAL_LIBS} ${CMD}
 	@echo "run with '.build/a.out'"
 
+run:
+	${BUILD}/a.out
+
 ${CMD}: matmul_op.m matmul_op.h main.m
 	clang++ -o ${BUILD}/matmul_op.o -c matmul_op.m ${CFLAGS} && \
 	clang++ -o ${BUILD}/main.o -c main.m ${CFLAGS} && \

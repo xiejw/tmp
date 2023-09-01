@@ -3,9 +3,7 @@
 
 #include <time.h>
 
-// TODO tile
-#define TILE_SIZE 16
-#define GROUPS 8
+#include "const.h"
 
 //
 // prototype
