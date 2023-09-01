@@ -11,9 +11,6 @@ Some lessons:
 - MPS is a  high level framework. It is not easy to undersand nor customize.
 - This means libtorch is not a good fit.
 
-**TODO**: the metal shader version got started. It is developed under the `metal`
-folder and not yet done. The vec add is done.
-
 ### Benchmark PyTorch on macOS
 
 This test is checking the performance with pytorch (arm64 + mps)
