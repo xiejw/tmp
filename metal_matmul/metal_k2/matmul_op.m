@@ -146,12 +146,12 @@ void matmulOpRun(struct matmul_op* op) {
 
         double start = eva_gettime_in_secs();
         [commandBuffer commit];
+
         [commandBuffer waitUntilCompleted];
         double end = eva_gettime_in_secs();
 
         NSLog(@"matmul takes %g secs", end - start);
         NSLog(@"metal commit END\n");
-
         verifyResults(op);
 }
 

@@ -10,6 +10,8 @@ using namespace metal;
 #define UNROLL(N) _UNROLL_IMPL(N)
 #define _UNROLL_IMPL(N) UNROLL_ ## N(0)
 
+#define UNROLL_32(i) UNROLL_16(i); UNROLL_16(16)
+
 #define UNROLL_16(i) emit_inst(i); UNROLL_15(i+1)
 #define UNROLL_15(i) emit_inst(i); UNROLL_14(i+1)
 #define UNROLL_14(i) emit_inst(i); UNROLL_13(i+1)

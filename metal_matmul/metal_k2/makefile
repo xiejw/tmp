@@ -13,7 +13,7 @@ LDFLAGS=-framework Foundation -framework Metal -framework CoreGraphics -framewor
 compile: ${BUILD} ${METAL_LIBS} ${CMD}
 	@echo "run with '.build/a.out'"
 
-run:
+run: ${BUILD}/a.out
 	${BUILD}/a.out
 
 ${CMD}: matmul_op.m matmul_op.h main.m
