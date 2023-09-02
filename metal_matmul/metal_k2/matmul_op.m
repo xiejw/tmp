@@ -190,6 +190,7 @@ void encodeAddCommand(
 
         // TODO tile and groups
         MTLSize gridSize = MTLSizeMake(n, m/GROUPS, 1);
+        NSLog(@"GridSize %lux%lu", gridSize.width, gridSize.height);
 
         // TODO: hard code now
         //
@@ -209,6 +210,7 @@ void encodeAddCommand(
 
         assert(TILE_SIZE * TILE_SIZE <= threadGroupSize);
         MTLSize threadgroupSize = MTLSizeMake(TILE_SIZE, TILE_SIZE, 1);
+        NSLog(@"Thread group size %lux%lu", threadgroupSize.width, threadgroupSize.height);
 
         [computeEncoder dispatchThreads:gridSize
                   threadsPerThreadgroup:threadgroupSize];

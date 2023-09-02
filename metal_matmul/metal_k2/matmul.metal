@@ -4,32 +4,12 @@
 #include <metal_compute>
 using namespace metal;
 
-kernel void matmul_op(
-                device const float* a,
-                device const float* b,
-                device float* c,
-                constant int64_t& m,
-                constant int64_t& n,
-                constant int64_t& k,
-                ushort2 gid [[thread_position_in_grid]])
-{
-        const int64_t row = gid.x;
-        const int64_t col = gid.y;
-        float v = 0;
-        for (int64_t i = 0; i < k; i++) {
-                v += a[row * k + i] * b[i * n + col];
-        }
-        c[row * n + col] = v;
-}
-
-
-
 // TODO
 // assume m == n == k == 4096*2 for now
 // assume both a and b are row marjo
 //
 // launch thread group as (16, 16)
-// threadgroup is 2 (16 * 16) group
+// threadgroup is 8 (16 * 16) group
 #include "const.h"
 
 kernel void matmul_op_tile(
@@ -52,8 +32,8 @@ kernel void matmul_op_tile(
         threadgroup float * a_buf = buf;
         threadgroup float * b_buf = ((threadgroup float*)buf) + GROUPS * GROUP_DIM * GROUP_DIM;
 
-        // TODO group
-        const int64_t ph_count = (4096 * 2 / GROUP_DIM);
+        // phases are runing along the k dimension, so here
+        const int64_t ph_count = (k / GROUP_DIM);
 
         // according to tests, array is on local reg file.
         float v[GROUPS] = {0};
@@ -75,14 +55,16 @@ kernel void matmul_op_tile(
                         offset += GROUP_DIM * GROUP_DIM; \
                         offset_a += GROUP_DIM * k;
 
-                        emit_load(15);
-                        emit_load(14);
-                        emit_load(13);
-                        emit_load(12);
-                        emit_load(11);
-                        emit_load(10);
-                        emit_load( 9);
-                        emit_load( 8);
+                        static_assert(GROUPS==8, "group size is not expected");
+
+                        //emit_load(15);
+                        //emit_load(14);
+                        //emit_load(13);
+                        //emit_load(12);
+                        //emit_load(11);
+                        //emit_load(10);
+                        //emit_load( 9);
+                        //emit_load( 8);
                         emit_load( 7);
                         emit_load( 6);
                         emit_load( 5);
