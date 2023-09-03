@@ -6,30 +6,6 @@ using namespace metal;
 
 #include "const.h"
 
-// beautiful c macro unrolling. yay!
-#define UNROLL(N) _UNROLL_IMPL(N)
-#define _UNROLL_IMPL(N) UNROLL_ ## N(0)
-
-#define UNROLL_32(i) UNROLL_16(i); UNROLL_16(16)
-
-#define UNROLL_16(i) emit_inst(i); UNROLL_15(i+1)
-#define UNROLL_15(i) emit_inst(i); UNROLL_14(i+1)
-#define UNROLL_14(i) emit_inst(i); UNROLL_13(i+1)
-#define UNROLL_13(i) emit_inst(i); UNROLL_12(i+1)
-#define UNROLL_12(i) emit_inst(i); UNROLL_11(i+1)
-#define UNROLL_11(i) emit_inst(i); UNROLL_10(i+1)
-#define UNROLL_10(i) emit_inst(i); UNROLL_9(i+1)
-#define UNROLL_9(i)  emit_inst(i); UNROLL_8(i+1)
-
-#define UNROLL_8(i) emit_inst(i); UNROLL_7(i+1)
-#define UNROLL_7(i) emit_inst(i); UNROLL_6(i+1)
-#define UNROLL_6(i) emit_inst(i); UNROLL_5(i+1)
-#define UNROLL_5(i) emit_inst(i); UNROLL_4(i+1)
-#define UNROLL_4(i) emit_inst(i); UNROLL_3(i+1)
-#define UNROLL_3(i) emit_inst(i); UNROLL_2(i+1)
-#define UNROLL_2(i) emit_inst(i); UNROLL_1(i+1)
-#define UNROLL_1(i) emit_inst(i)
-
 kernel void matmul_op_tile(
                 device const float* a,
                 device const float* b,
@@ -45,76 +21,109 @@ kernel void matmul_op_tile(
         const int64_t col_tile_offset = tid.x;
         const int64_t row_tile_offset = tid.y;
 
-        const int64_t col = gid.x;
-        const uint64_t group_y = group_in_grid.y;
+        const uint64_t group_col = group_in_grid.x;
+        const uint64_t group_row = group_in_grid.y;
 
         threadgroup float * a_local_buf = buf;
         threadgroup float * b_local_buf = ((threadgroup float*)buf) +
                 GROUPS * GROUP_DIM * GROUP_DIM;
 
-        // phases are runing along the k dimension, so here
+        // phases are runing along the k dimension, so here no GROUPS.
         const int64_t ph_count = (k / GROUP_DIM);
 
         // according to tests, array is on local reg file.
-        float v[GROUPS] = {0};
+        thread float a_reg[GROUPS];
+        thread float b_reg[GROUPS];
+        thread float v[GROUPS * GROUPS] = {0};
 
-        for (int64_t ph = 0; ph < ph_count; ph++ ) {
+        for (int64_t ph = 0; ph < ph_count; ph++) {
 
-                // load GROUPS of rows into local buf for a
+                //
+                // Load GROUPS of rows into local buf for a
+                // We stack all groups in vertical way.
                 {
-                        // this rewriting improves 140ms; wtf
+
+                        uint64_t local_pos = row_tile_offset * GROUP_DIM + col_tile_offset;
                         uint64_t local_offset = 0;
-                        uint64_t a_offset = 0;
+                        uint64_t local_offset_inc = GROUP_DIM * GROUP_DIM;
 
-                        uint64_t local_pos = row_tile_offset * GROUP_DIM +
-                                col_tile_offset;
-
-                        uint64_t a_pos = (group_y * GROUPS * GROUP_DIM + row_tile_offset) * k +
+                        uint64_t a_pos = (group_row * GROUPS * GROUP_DIM + row_tile_offset) * k +
                                 ph * GROUP_DIM + col_tile_offset;
+                        uint64_t a_offset = 0;
+                        uint64_t a_offset_inc = GROUP_DIM * k;
 
                         #define emit_inst(i) a_local_buf[local_pos + local_offset] = \
                             a[a_pos + a_offset];                                     \
-                            local_offset += GROUP_DIM * GROUP_DIM;                   \
-                            a_offset     += GROUP_DIM * k;
+                            local_offset += local_offset_inc;                        \
+                            a_offset     += a_offset_inc;
 
                         UNROLL(GROUPS);
-
                         #undef emit_inst
-
                 }
 
-                // load element from b to local buf for b
-                b_local_buf[row_tile_offset * GROUP_DIM + col_tile_offset] = b[
-                        (ph * GROUP_DIM + row_tile_offset) * n + col];
+                //
+                // Load GROUPS of cols from b to local buf for b
+                // We place all groups in horizontal way.
+                {
+                        uint64_t local_pos = row_tile_offset * (GROUP_DIM * GROUPS) +
+                                col_tile_offset;
+                        uint64_t local_offset = 0;
+                        uint64_t local_offset_inc = GROUP_DIM; // horizontal shift
+
+                        uint64_t b_pos = (ph * GROUP_DIM + row_tile_offset) * n +
+                                group_col * GROUPS * GROUP_DIM + col_tile_offset;
+                        uint64_t b_offset = 0;
+                        uint64_t b_offset_inc = GROUP_DIM;
+
+                        #define emit_inst(i) b_local_buf[local_pos + local_offset] = \
+                            b[b_pos + b_offset];                                     \
+                            local_offset += local_offset_inc;                        \
+                            b_offset     += b_offset_inc;
+
+                        UNROLL(GROUPS);
+                        #undef emit_inst
+                }
                 threadgroup_barrier(mem_flags::mem_threadgroup);
 
-                // take one element from col and work on all rows in this thread.
-                #define emit_inst(i) {                                                 \
-                        float tmp = b_local_buf[(i) * GROUP_DIM + col_tile_offset];    \
-                                                                                       \
-                        int64_t pos = (row_tile_offset) * GROUP_DIM + (i);             \
-                        int64_t offset = GROUP_DIM * GROUP_DIM;                        \
-                        /* loop GROUPs */                                              \
-                        for (int64_t k = 0; k < GROUPS; k++) {                         \
-                                v[k] += a_local_buf[pos] * tmp;  pos += offset;        \
-                        }                                                              \
+
+                for (uint64_t inner_idx = 0; inner_idx < GROUP_DIM; inner_idx++) {
+                //{
+                        //uint64_t inner_idx = 0;
+                        //
+                        // Loads from SRAM to local reg files
+                        for (uint64_t k = 0; k < GROUPS; k++) {
+                                //a_reg[k] = a_local_buf[(row_tile_offset) * GROUP_DIM + (k) * GROUP_DIM * GROUP_DIM + inner_idx];
+                                //b_reg[k] = b_local_buf[inner_idx * GROUPS * GROUP_DIM + col_tile_offset + (k) * GROUP_DIM];
+                                //
+                                a_reg[k] = a_local_buf[(row_tile_offset) * GROUP_DIM + (k) * GROUP_DIM * GROUP_DIM + inner_idx];
+                                b_reg[k] = b_local_buf[inner_idx * GROUPS * GROUP_DIM + col_tile_offset + (k) * GROUP_DIM];
+
+                                //a_reg[k] = a_local_buf[(row_tile_offset * GROUPS + k ) * GROUP_DIM + inner_idx];
+                                //b_reg[k] = b_local_buf[inner_idx * GROUPS * GROUP_DIM + col_tile_offset * GROUPS + (k)];
+                        }
+
+                        for (uint64_t v_row = 0; v_row < GROUPS; v_row++) {
+                                const uint64_t v_pos = v_row * GROUPS;
+                                for (int64_t v_col = 0; v_col < GROUPS; v_col++) {
+                                        v[v_pos + v_col] += a_reg[v_row] * b_reg[v_col];
+                                }
+                        }
                 }
-
-                UNROLL(GROUP_DIM);
-                #undef emit_inst
-
                 threadgroup_barrier(mem_flags::mem_threadgroup);
         }
 
         // write back.
         {
-                uint64_t c_pos = (group_in_grid.y * GROUPS * GROUP_DIM +
-                                row_tile_offset) * n + col;
-                uint64_t offset = GROUP_DIM * n;
-                thread float *vp = v;
+                for (uint64_t v_row = 0; v_row < GROUPS; v_row++) {
+                        const uint64_t c_pos_base = (group_row * GROUPS * GROUP_DIM +
+                                        row_tile_offset + v_row * GROUP_DIM) * n;
+                        const uint64_t c_pos = c_pos_base + (group_col * GROUPS * GROUP_DIM + col_tile_offset);
+                        const uint64_t c_pos_offset_inc = GROUP_DIM;
 
-                #define emit_inst(i) {c[c_pos] = *vp; c_pos += offset; vp++;}
-                UNROLL(GROUPS);
-                #undef emit_inst
+                        const uint64_t v_pos = v_row * GROUPS;
+                        for (uint64_t v_col = 0; v_col < GROUPS; v_col++) {
+                                c[c_pos + v_col * c_pos_offset_inc] = v[v_pos + v_col];
+                        }
+                }
         }
 }

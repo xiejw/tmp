@@ -140,14 +140,17 @@ void matmulOpRun(struct matmul_op* op) {
         id<MTLComputeCommandEncoder> computeEncoder = [
                 commandBuffer computeCommandEncoder];
         assert(computeEncoder != nil);
+        NSLog(@"status: %lu", [commandBuffer status]);
 
         encodeAddCommand(op, computeEncoder);
         [computeEncoder endEncoding];
 
         double start = eva_gettime_in_secs();
         [commandBuffer commit];
+        NSLog(@"status: %lu", [commandBuffer status]);
 
         [commandBuffer waitUntilCompleted];
+        NSLog(@"status: %lu", [commandBuffer status]);
         double end = eva_gettime_in_secs();
 
         NSLog(@"matmul takes %g secs", end - start);
@@ -186,10 +189,10 @@ void encodeAddCommand(
         [computeEncoder setBytes: &k length:len atIndex:5];
 
         // TODO tile
-        [computeEncoder setThreadgroupMemoryLength:sizeof(float)*(1+GROUPS)*TILE_SIZE*TILE_SIZE atIndex:0];
+        [computeEncoder setThreadgroupMemoryLength:sizeof(float)*(2*GROUPS)*TILE_SIZE*TILE_SIZE atIndex:0];
 
         // TODO tile and groups
-        MTLSize gridSize = MTLSizeMake(n, m/GROUPS, 1);
+        MTLSize gridSize = MTLSizeMake(n/GROUPS, m/GROUPS, 1);
         NSLog(@"GridSize %lux%lu", gridSize.width, gridSize.height);
 
         // TODO: hard code now
@@ -208,7 +211,9 @@ void encodeAddCommand(
         //         threadGroupSize = nelems;
         // }
 
-        assert(TILE_SIZE * TILE_SIZE <= threadGroupSize);
+        if (TILE_SIZE * TILE_SIZE > threadGroupSize) {
+                NSLog(@"ERROR group size");
+        }
         MTLSize threadgroupSize = MTLSizeMake(TILE_SIZE, TILE_SIZE, 1);
         NSLog(@"Thread group size %lux%lu", threadgroupSize.width, threadgroupSize.height);
 
