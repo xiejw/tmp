@@ -188,10 +188,12 @@ void encodeAddCommand(
 
         // TODO
         // [computeEncoder setThreadgroupMemoryLength:sizeof(float)*(2*GROUPS)*TILE_SIZE*TILE_SIZE atIndex:0];
+        //
 
-        // TODO
-        // MTLSize gridSize = MTLSizeMake(n/GROUPS, m/GROUPS, 1);
-        MTLSize gridSize = MTLSizeMake(GROUP_SIZE_X, 1, 1);
+        static_assert(SIMDGROUP_SIZE == 32, "simdgroup size");
+        static_assert(SIMDGROUP_SIZE == GROUP_SIZE_X, "simdgroup size == group size x");
+
+        MTLSize gridSize = MTLSizeMake(n/SIMDGROUP_MAT_DIM*GROUP_SIZE_X, m/SIMDGROUP_MAT_DIM, 1);
         NSLog(@"GridSize %lux%lu", gridSize.width, gridSize.height);
 
         NSUInteger threadGroupSize = op->pip.maxTotalThreadsPerThreadgroup;

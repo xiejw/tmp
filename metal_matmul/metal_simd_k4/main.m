@@ -8,9 +8,7 @@
 #import "matmul_op.h"
 
 // be consistant with other tests.
-// TODO
-// #define N_DIM (4096 * 2)
-#define N_DIM (8)
+#define N_DIM (4096 * 2)
 
 int main(int argc, const char * argv[]) {
         @autoreleasepool {
