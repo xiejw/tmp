@@ -3,8 +3,7 @@
 
 #include <time.h>
 
-// TODO tile
-#define TILE_SIZE 16
+#include "const.h"
 
 //
 // prototype
@@ -61,12 +60,10 @@ struct matmul_op * matmulOpNew(id<MTLDevice> device, int m, int n, int k) {
         [defaultLibrary autorelease];
 
         id<MTLFunction> func = [
-                // TODO tile
-                defaultLibrary newFunctionWithName: @"matmul_op_tile"];
+                defaultLibrary newFunctionWithName: @"matmul_op"];
 
         if (func == nil) {
-                // TODO tile
-                NSLog(@"Failed to find the matmul_op_tile function.");
+                NSLog(@"Failed to find the matmul_op function.");
                 return nil;
         }
         [func autorelease];
@@ -186,17 +183,8 @@ void encodeAddCommand(
         [computeEncoder setBytes: &n length:len atIndex:4];
         [computeEncoder setBytes: &k length:len atIndex:5];
 
-        // TODO tile
-        [computeEncoder setThreadgroupMemoryLength:sizeof(float)*2*TILE_SIZE*TILE_SIZE atIndex:0];
-
-        // TODO tile and groups
         MTLSize gridSize = MTLSizeMake(n, m, 1);
 
-        // TODO: hard code now
-        //
-        // read this for details.
-        // - https://developer.apple.com/documentation/metal/compute_passes/calculating_threadgroup_and_grid_sizes?language=objc
-        // - https://developer.apple.com/documentation/metal/mtlcomputecommandencoder/1443142-setthreadgroupmemorylength?language=objc
         NSUInteger threadGroupSize = op->pip.maxTotalThreadsPerThreadgroup;
         NSUInteger simdGroupSize = op->pip.threadExecutionWidth;
         NSUInteger threadGroupMemSize = op->pip.staticThreadgroupMemoryLength;
@@ -204,12 +192,8 @@ void encodeAddCommand(
         NSLog(@"simd group size      : %d\n", (int) simdGroupSize);
         NSLog(@"thread group mem size: %d\n", (int) threadGroupMemSize);
 
-        // if (threadGroupSize > nelems) {
-        //         threadGroupSize = nelems;
-        // }
-
-        assert(TILE_SIZE * TILE_SIZE <= threadGroupSize);
-        MTLSize threadgroupSize = MTLSizeMake(TILE_SIZE, TILE_SIZE, 1);
+        assert(GROUP_DIM * GROUP_DIM  <= threadGroupSize);
+        MTLSize threadgroupSize = MTLSizeMake(GROUP_DIM , GROUP_DIM , 1);
 
         [computeEncoder dispatchThreads:gridSize
                   threadsPerThreadgroup:threadgroupSize];

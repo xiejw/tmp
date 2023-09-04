@@ -13,7 +13,7 @@ LDFLAGS=-framework Foundation -framework Metal -framework CoreGraphics -framewor
 compile: ${BUILD} ${METAL_LIBS} ${CMD}
 	@echo "run with '.build/a.out'"
 
-${CMD}: matmul_op.m matmul_op.h main.m
+${CMD}: matmul_op.m matmul_op.h main.m const.h
 	clang++ -o ${BUILD}/matmul_op.o -c matmul_op.m ${CFLAGS} && \
 	clang++ -o ${BUILD}/main.o -c main.m ${CFLAGS} && \
 	clang++ -o ${BUILD}/a.out ${BUILD}/main.o ${BUILD}/matmul_op.o ${LDFLAGS}
@@ -21,7 +21,7 @@ ${CMD}: matmul_op.m matmul_op.h main.m
 ${BUILD}:
 	mkdir -p ${BUILD}
 
-${BUILD}/matmul.metallib: matmul.metal
+${BUILD}/matmul.metallib: matmul.metal const.h
 	xcrun -sdk macosx metal -c matmul.metal -o ${BUILD}/matmul.air && \
 	       xcrun -sdk macosx metallib ${BUILD}/matmul.air -o ${BUILD}/matmul.metallib
 

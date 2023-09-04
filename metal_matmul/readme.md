@@ -1,14 +1,25 @@
-upper bound is 3Tflops(0.176301 secs)
-k2 1d blocktile 1Tflops
-k3 2d blocktile (reg split after GROUPS >= 8)
+# vim: ft=help
 
-https://siboehm.com/articles/22/CUDA-MMM
+benchmark >
+  Pytorch          4.674    TFLOPS  ( 0.1763 secs)
+  k0 naive alg     0.019049 TFLOPS  (28.8648 secs)
+  k1 shared cache  0.3742   TFLOPS  ( 1.469  secs)
+  k1 manual unroll 0.4740   TFLOPS  ( 1.16   secs)
+  k2 1d blocktile  1.0188   TFLOPS  ( 0.5396 secs)
+  k3 2d blocktile  1.0192   TFLOPS  ( 0.5394 secs) (reg split after GROUPS >= 16)
 
-https://stackoverflow.com/questions/77029896/how-to-detect-invalid-thread-group-setting-in-macos-metal-gpu
+Refs:
+- https://siboehm.com/articles/22/CUDA-MMM
+
+Questions:
+- https://stackoverflow.com/questions/77029896/how-to-detect-invalid-thread-group-setting-in-macos-metal-gpu
 
 TODO clean k1 k0
-- k0 naive alg
 - k0 tiling (not blocktile)
+
+Metal undocumented
+- unknown how to profile
+- unknown when spill happen (NO PTX)
 
 clang(metal) does not do good job
 - cannot resolve index for array. must static unroll. not even x * C + y formular
