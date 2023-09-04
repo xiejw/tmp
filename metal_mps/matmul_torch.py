@@ -5,7 +5,7 @@ print(f"torch mps backend: {torch.backends.mps.is_available()}")
 
 # choose a device
 device = "cpu"
-#device = "mps"
+device = "mps"
 
 # shapes must be consistent in all tests.
 a = torch.randn([4096 * 2, 4096 * 2], device=device)

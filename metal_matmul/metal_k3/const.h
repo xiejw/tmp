@@ -1,6 +1,6 @@
-#define TILE_SIZE 16
+#define TILE_SIZE 8
 #define GROUP_DIM TILE_SIZE
-#define GROUPS 4
+#define GROUPS 8
 
 // beautiful c macro unrolling. yay!
 #define UNROLL(N) _UNROLL_IMPL(N)

@@ -86,28 +86,46 @@ kernel void matmul_op_tile(
                 threadgroup_barrier(mem_flags::mem_threadgroup);
 
 
+                static_assert(GROUPS == 16 | GROUPS == 8 | GROUPS == 4, "hard coded unroll 4, 8, 16");
+
                 for (uint64_t inner_idx = 0; inner_idx < GROUP_DIM; inner_idx++) {
-                //{
-                        //uint64_t inner_idx = 0;
                         //
                         // Loads from SRAM to local reg files
-                        for (uint64_t k = 0; k < GROUPS; k++) {
-                                //a_reg[k] = a_local_buf[(row_tile_offset) * GROUP_DIM + (k) * GROUP_DIM * GROUP_DIM + inner_idx];
-                                //b_reg[k] = b_local_buf[inner_idx * GROUPS * GROUP_DIM + col_tile_offset + (k) * GROUP_DIM];
-                                //
-                                a_reg[k] = a_local_buf[(row_tile_offset) * GROUP_DIM + (k) * GROUP_DIM * GROUP_DIM + inner_idx];
-                                b_reg[k] = b_local_buf[inner_idx * GROUPS * GROUP_DIM + col_tile_offset + (k) * GROUP_DIM];
+                        uint64_t a_pos = (row_tile_offset) * GROUP_DIM +  inner_idx;
+                        uint64_t b_pos = inner_idx * GROUPS * GROUP_DIM + col_tile_offset;
 
-                                //a_reg[k] = a_local_buf[(row_tile_offset * GROUPS + k ) * GROUP_DIM + inner_idx];
-                                //b_reg[k] = b_local_buf[inner_idx * GROUPS * GROUP_DIM + col_tile_offset * GROUPS + (k)];
-                        }
+#define emit_inst(k) \
+                        a_reg[k] = a_local_buf[a_pos + (k) * GROUP_DIM * GROUP_DIM]; \
+                        b_reg[k] = b_local_buf[b_pos + (k) * GROUP_DIM];
 
-                        for (uint64_t v_row = 0; v_row < GROUPS; v_row++) {
-                                const uint64_t v_pos = v_row * GROUPS;
-                                for (int64_t v_col = 0; v_col < GROUPS; v_col++) {
-                                        v[v_pos + v_col] += a_reg[v_row] * b_reg[v_col];
-                                }
-                        }
+                        UNROLL(GROUPS);
+#undef emit_inst
+
+#define emit_inst(i) \
+                                 v[(i) * GROUPS + (  0 )] += a_reg[(i)] * b_reg[( 0)];        \
+                                 v[(i) * GROUPS + (  1 )] += a_reg[(i)] * b_reg[( 1)];        \
+                                 v[(i) * GROUPS + (  2 )] += a_reg[(i)] * b_reg[( 2)];        \
+                                 v[(i) * GROUPS + (  3 )] += a_reg[(i)] * b_reg[( 3)];        \
+                        if (GROUPS > 4) {                                                     \
+                                 v[(i) * GROUPS + (  4 )] += a_reg[(i)] * b_reg[( 4)];        \
+                                 v[(i) * GROUPS + (  5 )] += a_reg[(i)] * b_reg[( 5)];        \
+                                 v[(i) * GROUPS + (  6 )] += a_reg[(i)] * b_reg[( 6)];        \
+                                 v[(i) * GROUPS + (  7 )] += a_reg[(i)] * b_reg[( 7)];        \
+                        }                                                                     \
+                                                                                              \
+                        if (GROUPS > 8) {                                                     \
+                                 v[(i) * GROUPS + (  8 )] += a_reg[(i)] * b_reg[( 8)];        \
+                                 v[(i) * GROUPS + (  9 )] += a_reg[(i)] * b_reg[( 9)];        \
+                                 v[(i) * GROUPS + ( 10 )] += a_reg[(i)] * b_reg[(10)];        \
+                                 v[(i) * GROUPS + ( 11 )] += a_reg[(i)] * b_reg[(11)];        \
+                                 v[(i) * GROUPS + ( 12 )] += a_reg[(i)] * b_reg[(12)];        \
+                                 v[(i) * GROUPS + ( 13 )] += a_reg[(i)] * b_reg[(13)];        \
+                                 v[(i) * GROUPS + ( 14 )] += a_reg[(i)] * b_reg[(14)];        \
+                                 v[(i) * GROUPS + ( 15 )] += a_reg[(i)] * b_reg[(15)];        \
+                        }                                                                     \
+                                                                                              \
+
+                        UNROLL(GROUPS);
                 }
                 threadgroup_barrier(mem_flags::mem_threadgroup);
         }
