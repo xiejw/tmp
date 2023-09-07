@@ -172,10 +172,10 @@ void encodeAddCommand(
                 struct matmul_op *op,
                 id<MTLComputeCommandEncoder> computeEncoder) {
 
-        int m = op->m;
-        int n = op->n;
-        int k = op->k;
-        size_t len = sizeof(int);
+        int64_t m = op->m;
+        int64_t n = op->n;
+        int64_t k = op->k;
+        size_t len = sizeof(int64_t);
 
         // encode the pipeline state object and its parameters.
         [computeEncoder setComputePipelineState: op->pip];
