@@ -7,10 +7,12 @@
 #define SIMDGROUPS_PER_GROUP              4
 #define TILE_SIZE                        32
 #define HALF_TILE_SIZE                   16  // TILE_SIZE / 2
+#define QUARTER_TILE_SIZE                 4  // TILE_SIZE / 8 better name
 #define SIMDGROUPS_TILES_PER_K_TILE       4  // TILE_SIZE / SIMDGROUP_MAT_DIM
 
 static_assert(SIMDGROUP_MAT_DIM * SIMDGROUPS_TILES_PER_K_TILE == TILE_SIZE, "");
-static_assert(HALF_TILE_SIZE * 2 == TILE_SIZE, "");
+static_assert(HALF_TILE_SIZE    * 2 == TILE_SIZE, "");
+static_assert(QUARTER_TILE_SIZE * 8 == TILE_SIZE, "");
 
 #define N_BYTES                           (sizeof(float))
 #define N_ELEMS_PER_MATRIX                (TILE_SIZE * TILE_SIZE)

@@ -14,6 +14,7 @@ benchmark >
   k4 tiling        0.2449   TFLOPS  ( 4.4888 secs)
   k5 2d(32) tile   2.4401   TFLOPS  ( 0.4506 secs)
      int index     2.778            ( 0.3957 secs)
+     vec load      3.0610   TFLOPS  ( 0.3592 secs)
 
 Refs:
 - https://siboehm.com/articles/22/CUDA-MMM
