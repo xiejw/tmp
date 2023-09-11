@@ -1,5 +1,41 @@
 \documentclass[12pt,letterpaper]{article}
 
+
+%
+% adjust the section font
+%
+\usepackage{titlesec}
+\usepackage{xcolor}
+\titleformat{\section}{\normalfont\sffamily\sffamily\color{cyan}}{\thesection}{1em}{}
+
+%
+% adjust the line spaces.
+%
+% \usepackage{setspace}
+% \setstretch{1.00}
+
+%
+% adjust the paragraph spaces.
+%
+% remove indent of all paragraphs and adjust the skip between paragraphs.
+%
+\usepackage{parskip}
+\setlength{\parskip}{0.5\baselineskip}%
+
+%
+% new date command
+%
+\newcommand{\draftdate}[1]{\vspace{-2.0em}\hfill\emph{\small{#1}}\par}
 \begin{document}
-Hello XeTeX.
+
+\section*{Why Metal}
+\draftdate{2023-09-11}
+Hello Metal.
+
+The major reason why I am using Metal is simply I have it. All my laptops are
+M1/2 based macOS with Metal. After install Xcode, I can just compile any code
+and use it. I \emph{guess} even without Metal I might be able to compile the
+code via inline mode.
+
+
 \end{document}
