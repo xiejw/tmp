@@ -4,14 +4,15 @@
 // kernel configs
 #define SIMDGROUP_SIZE                   32
 #define SIMDGROUP_MAT_DIM                 8
-#define SIMDGROUPS_PER_GROUP              8
-#define TILE_SIZE                        64
-#define K_TILE_SIZE                      32
+#define SIMDGROUPS_PER_GROUP              8   // 8
+#define TILE_SIZE                        64   // 64
+#define K_TILE_SIZE                      16
+#define SIMDGROUPS_TILES_PER_K_TILE       2   // K_TILE_SIZE / SIMDGROUP_MAT_DIM
 
 // #define HALF_TILE_SIZE                   16  // TILE_SIZE / 2
 // #define QUARTER_TILE_SIZE                 4  // TILE_SIZE / 8 better name
-#define SIMDGROUPS_TILES_PER_K_TILE       4  // K_TILE_SIZE / SIMDGROUP_MAT_DIM
 
+static_assert(SIMDGROUP_MAT_DIM * SIMDGROUPS_PER_GROUP == TILE_SIZE, "");
 static_assert(SIMDGROUP_MAT_DIM * SIMDGROUPS_TILES_PER_K_TILE == K_TILE_SIZE, "");
 // static_assert(HALF_TILE_SIZE    * 2 == TILE_SIZE, "");
 // static_assert(QUARTER_TILE_SIZE * 8 == TILE_SIZE, "");
