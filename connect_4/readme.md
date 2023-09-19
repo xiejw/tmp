@@ -15,7 +15,13 @@ of one's own discs.
 Let's Play
 ==========
 
-Simply run:
+- Download the pytorch (binary) state file, if absent, from
+  [here](https://github.com/xiejw/tmp/releases).
+- Sanity check python dependencies:
 
-    make run
+        make check
+
+- Then run:
+
+        make run
 
