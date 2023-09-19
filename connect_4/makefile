@@ -5,7 +5,7 @@ WEIGHT_FILE = data/golden_weights/2020-05-03.h5
 default: run
 
 run: check
-	PYTHONPATH=lib python3 cmd/play.py
+	PYTHONPATH=lib C4_STATE_FILE=~/Desktop/resnet.pt.state python3 cmd/play_with_human.py
 
 check:
 	python3 -c "import torch"

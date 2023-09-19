@@ -65,7 +65,7 @@ class MCTSNode(object):
                         snapshot=board.snapshot(deepcopy=False),
                         next_player_color=self.next_player_color)))
 
-        assert isinstance(pred, list)
+        assert isinstance(pred, (list, tuple))
         policy_pred, value_pred = pred
         del pred
 

@@ -27,9 +27,11 @@ def convert_inference_state_to_model_feature(config, inference_state):
                 boards_np[0, 1, x, y] = 1.0
 
     # Puts channels at the end.
+    # TODO drop this transpose
     boards_np = np.transpose(boards_np, [0, 2, 3, 1])
 
-    return boards_np
+    # TODO: float first
+    return boards_np.astype(np.float32)
 
 
 # Converts structured states (training) to features.
