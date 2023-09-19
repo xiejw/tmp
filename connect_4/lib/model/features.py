@@ -7,7 +7,7 @@ from game import Position
 # Converts structured state (inference) to feature planes.
 def convert_inference_state_to_model_feature(config, inference_state):
     # 3 is the number of feature planes.
-    boards_np = np.zeros([1, 3, config.rows, config.columns])
+    boards_np = np.zeros([1, 3, config.rows, config.columns], dtype=np.float32)
 
     assert isinstance(inference_state.next_player_color, Color)
     if inference_state.next_player_color == Color.BLACK:
@@ -26,12 +26,8 @@ def convert_inference_state_to_model_feature(config, inference_state):
                 assert color == Color.WHITE
                 boards_np[0, 1, x, y] = 1.0
 
-    # Puts channels at the end.
-    # TODO drop this transpose
-    boards_np = np.transpose(boards_np, [0, 2, 3, 1])
-
-    # TODO: float first
-    return boards_np.astype(np.float32)
+    # nchw is the data format
+    return boards_np
 
 
 # Converts structured states (training) to features.

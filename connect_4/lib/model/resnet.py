@@ -26,10 +26,9 @@ class ResNetModel(torch.nn.Module):
     def predict(self, x):
         # This is the API client will call
 
-        # TODO: remove transpose
         with torch.no_grad():
             self.eval()
-            return self.__call__(torch.from_numpy(x.transpose(0, 3, 1, 2)))
+            return self.__call__(torch.from_numpy(x).to(self.device))
 
 
     def __init__(self):
@@ -195,6 +194,14 @@ class ResNetModel(torch.nn.Module):
                     in_features=256,
                     out_features=1)
         self.v_tanh      =  torch.nn.Tanh()
+
+        # TODO: mps is slower than cpu. Need debug
+        # self.to("mps")
+        self.to("cpu")
+
+        device = next(self.parameters()).device
+        print(f"model is on {device}")
+        self.device = device
 
 
     def forward(self, x):
