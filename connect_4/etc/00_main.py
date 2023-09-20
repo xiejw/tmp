@@ -1,4 +1,16 @@
+# vim: ft=python
 #
+# This code is used to translate ResNet-like Model for c4 from Keras to Pytorch.
+#
+# The strategy is as follows:
+#
+# 1. Create a ResNetConverter which takes all weights manually translated from
+#    Keras.
+# 2. Create a formal Pytorch ResNetModel in canonical way. Loading the weights
+#    from ResNetConverter to it and then dump back (after numerical results
+#    checking). With this, the code is usable by the RL game.
+
+
 # disable tf and pytorch warnings
 #
 import util

@@ -10,7 +10,7 @@ occupying the lowest available space within the column. The objective of the
 game is to be the first to form a horizontal, vertical, or diagonal line of four
 of one's own discs.
 
-![ConnectFour](./data/images/Connect_Four.gif)
+![ConnectFour](./etc/images/Connect_Four.gif)
 
 Let's Play
 ==========
