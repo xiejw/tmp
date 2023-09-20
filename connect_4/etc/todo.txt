@@ -2,9 +2,6 @@
 
 Few things as next steps
 
-- Reresolve all the warnings in the code. The even kernel is odd. We likely need
-  a weight rewrite to make that happen.
-
 - Benchmark on CPU vs MPS. Benchmark on different batch sizes. to see the
   differences.
 

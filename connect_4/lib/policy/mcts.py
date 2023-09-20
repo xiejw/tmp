@@ -23,8 +23,6 @@ def _build_model(config):
     input_shape = (config.rows, config.columns, 3)
 
     state_file = os.getenv(STATE_FILE_PATH_KEY)
-    if state_file:
-        print("Loading model from:", state_file)
     m = build_model(input_shape, num_classes, state_file_to_load=state_file)
 
     return m

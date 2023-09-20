@@ -2,7 +2,7 @@
 #   tar -czvf c4-resnet.pt.state.tar.gz c4-resnet.pt.state
 
 ifndef ${C4_STATE_FILE}
-	C4_STATE_FILE = ~/Desktop/c4-resnet.pt.state
+	C4_STATE_FILE = ~/Desktop/c4-resnet-5x5.pt.state
 endif
 
 PY            = python3

@@ -1,18 +1,28 @@
 # vim: ft=python
 #
+# This script rewrites the original model with 4x4 kernel to 5x5 kernel to avoid
+# extra input copy (as suggested by pytorch warning message).
+#
+# In addition, the Softmax has explicity dim set (as suggested by pytorch
+# warning message as well).
+#
+# Appoarch wise, it looks like the following
+#
+# 1. Load all state dict with `strict=False`
+# 2. Set the 5x5 kernel with zeros and copy the 4x4 kernel to right bottom part.
+# 3. Check numerical results.
 
 
-# disable tf and pytorch warnings
-#
-#
-# pip install torch  # if possible, install torch cpu
-#
+import os
+
 from colorama import Fore
-
 import numpy as np
 import torch
 
 torch.no_grad().__enter__()
+
+FILE_TO_LOAD = os.path.expanduser("~/Desktop/c4-resnet.pt.state")
+FILE_TO_DUMP = os.path.expanduser("~/Desktop/c4-resnet-5x5.pt.state")
 
 #
 # initialize the env
@@ -287,6 +297,7 @@ class ResNetModel4x4(torch.nn.Module):
 #
 
 pt_m = ResNetModel4x4().eval()
+pt_m.load_state_dict(torch.load(FILE_TO_LOAD), strict=True)
 
 print_bar()
 
@@ -312,13 +323,10 @@ print(Fore.GREEN  + "(pt_m) (v)     ==>",
         pt_v.numpy(),
         Fore.RESET)
 
-
-
 # ==============================================================================
 #
 # ==============================================================================
 
-# torch.save(new_pt_m.state_dict(), "resnet.pt.state")
 
 class ResNetModel5x5(torch.nn.Module):
 
@@ -351,7 +359,19 @@ class ResNetModel5x5(torch.nn.Module):
             new_w_np[:, :, 4, 1:5] = w_np[:, :, 3, :]
             target_mm.weight.copy_(torch.from_numpy(new_w_np))
 
-        rewrite('conv2d.weight', self.conv2d)
+        rewrite('conv2d.weight',      self.conv2d)
+        rewrite('b0_conv2d.weight',   self.b0_conv2d)
+        rewrite('b0_conv2d_b.weight', self.b0_conv2d_b)
+        rewrite('b1_conv2d.weight',   self.b1_conv2d)
+        rewrite('b1_conv2d_b.weight', self.b1_conv2d_b)
+        rewrite('b2_conv2d.weight',   self.b2_conv2d)
+        rewrite('b2_conv2d_b.weight', self.b2_conv2d_b)
+        rewrite('b3_conv2d.weight',   self.b3_conv2d)
+        rewrite('b3_conv2d_b.weight', self.b3_conv2d_b)
+        rewrite('b4_conv2d.weight',   self.b4_conv2d)
+        rewrite('b4_conv2d_b.weight', self.b4_conv2d_b)
+
+        assert len(state_dict) == 0
 
         return self
 
@@ -375,7 +395,7 @@ class ResNetModel5x5(torch.nn.Module):
         self.b0_conv2d    =  torch.nn.Conv2d(
                 in_channels=128,
                 out_channels=128,
-                kernel_size=(4, 4),
+                kernel_size=(5, 5),
                 padding='same')
         self.b0_batch_n   =  torch.nn.BatchNorm2d(
                 num_features=128,
@@ -384,7 +404,7 @@ class ResNetModel5x5(torch.nn.Module):
         self.b0_conv2d_b  =  torch.nn.Conv2d(
                 in_channels=128,
                 out_channels=128,
-                kernel_size=(4, 4),
+                kernel_size=(5, 5),
                 padding='same')
         self.b0_batch_n_b =  torch.nn.BatchNorm2d(
                 num_features=128,
@@ -397,7 +417,7 @@ class ResNetModel5x5(torch.nn.Module):
         self.b1_conv2d    =  torch.nn.Conv2d(
                     in_channels=128,
                     out_channels=128,
-                    kernel_size=(4, 4),
+                    kernel_size=(5, 5),
                     padding='same')
         self.b1_batch_n   =  torch.nn.BatchNorm2d(
                 num_features=128,
@@ -406,7 +426,7 @@ class ResNetModel5x5(torch.nn.Module):
         self.b1_conv2d_b  =  torch.nn.Conv2d(
                     in_channels=128,
                     out_channels=128,
-                    kernel_size=(4, 4),
+                    kernel_size=(5, 5),
                     padding='same')
         self.b1_batch_n_b = torch.nn.BatchNorm2d(
                 num_features=128,
@@ -419,7 +439,7 @@ class ResNetModel5x5(torch.nn.Module):
         self.b2_conv2d    = torch.nn.Conv2d(
                     in_channels=128,
                     out_channels=128,
-                    kernel_size=(4, 4),
+                    kernel_size=(5, 5),
                     padding='same')
         self.b2_batch_n   =  torch.nn.BatchNorm2d(
                 num_features=128,
@@ -428,7 +448,7 @@ class ResNetModel5x5(torch.nn.Module):
         self.b2_conv2d_b  = torch.nn.Conv2d(
                     in_channels=128,
                     out_channels=128,
-                    kernel_size=(4, 4),
+                    kernel_size=(5, 5),
                     padding='same')
         self.b2_batch_n_b = torch.nn.BatchNorm2d(
                 num_features=128,
@@ -441,7 +461,7 @@ class ResNetModel5x5(torch.nn.Module):
         self.b3_conv2d    =  torch.nn.Conv2d(
                     in_channels=128,
                     out_channels=128,
-                    kernel_size=(4, 4),
+                    kernel_size=(5, 5),
                     padding='same')
         self.b3_batch_n   = torch.nn.BatchNorm2d(
                 num_features=128,
@@ -450,7 +470,7 @@ class ResNetModel5x5(torch.nn.Module):
         self.b3_conv2d_b  =  torch.nn.Conv2d(
                     in_channels=128,
                     out_channels=128,
-                    kernel_size=(4, 4),
+                    kernel_size=(5, 5),
                     padding='same')
         self.b3_batch_n_b = torch.nn.BatchNorm2d(
                 num_features=128,
@@ -463,7 +483,7 @@ class ResNetModel5x5(torch.nn.Module):
         self.b4_conv2d    =  torch.nn.Conv2d(
                     in_channels=128,
                     out_channels=128,
-                    kernel_size=(4, 4),
+                    kernel_size=(5, 5),
                     padding='same')
         self.b4_batch_n   =  torch.nn.BatchNorm2d(
                 num_features=128,
@@ -472,7 +492,7 @@ class ResNetModel5x5(torch.nn.Module):
         self.b4_conv2d_b  =  torch.nn.Conv2d(
                     in_channels=128,
                     out_channels=128,
-                    kernel_size=(4, 4),
+                    kernel_size=(5, 5),
                     padding='same')
         self.b4_batch_n_b = torch.nn.BatchNorm2d(
                 num_features=128,
@@ -496,7 +516,7 @@ class ResNetModel5x5(torch.nn.Module):
         self.p_dense     =  torch.nn.Linear(
                     in_features=84,
                     out_features=42)
-        self.p_softmax   =  torch.nn.Softmax()
+        self.p_softmax   =  torch.nn.Softmax(dim=1)
 
         # value head
 
@@ -609,7 +629,18 @@ new_pt_m = ResNetModel5x5().eval()
 sd = pt_m.state_dict()
 # for name in sd:
 #     print("  ", name)
-keys_to_pop = ['conv2d.weight']
+keys_to_pop = ['conv2d.weight',
+               'b0_conv2d.weight',
+               'b0_conv2d_b.weight',
+               'b1_conv2d.weight',
+               'b1_conv2d_b.weight',
+               'b2_conv2d.weight',
+               'b2_conv2d_b.weight',
+               'b3_conv2d.weight',
+               'b3_conv2d_b.weight',
+               'b4_conv2d.weight',
+               'b4_conv2d_b.weight',
+               ]
 rewrite_sds = {}
 
 for key_name in keys_to_pop:
@@ -651,3 +682,6 @@ np.testing.assert_allclose(
 
 print_bar()
 print('passed')
+
+torch.save(new_pt_m.state_dict(), FILE_TO_DUMP)
+print('saved')

@@ -5,10 +5,10 @@ def build_resnet_model(input_shape, num_classes, **kwargs):
     assert num_classes == 42
     assert input_shape == (6, 7, 3)
 
-    m = ResNetModel()
+    m = ResNetModelWrapper()
     state_file_to_load = kwargs.get("state_file_to_load")
     if state_file_to_load:
-        print("Loading module state from path", state_file_to_load)
+        print("[sys] loading module state from path:", state_file_to_load)
         m.load_state_dict(torch.load(state_file_to_load), strict=True)
     return m
 
@@ -23,21 +23,13 @@ class ResNetModel(torch.nn.Module):
         def forward(self, x, inp):
             return x + inp
 
-    def predict(self, x):
-        # This is the API client will call
-
-        with torch.no_grad():
-            self.eval()
-            return self.__call__(torch.from_numpy(x).to(self.device))
-
-
     def __init__(self):
         super(ResNetModel, self).__init__()
 
         self.conv2d = torch.nn.Conv2d(
                 in_channels=3,
                 out_channels=128,
-                kernel_size=(4, 4),
+                kernel_size=(5, 5),
                 padding='same')
 
         self.batch_n = torch.nn.BatchNorm2d(
@@ -51,7 +43,7 @@ class ResNetModel(torch.nn.Module):
         self.b0_conv2d    =  torch.nn.Conv2d(
                 in_channels=128,
                 out_channels=128,
-                kernel_size=(4, 4),
+                kernel_size=(5, 5),
                 padding='same')
         self.b0_batch_n   =  torch.nn.BatchNorm2d(
                 num_features=128,
@@ -60,7 +52,7 @@ class ResNetModel(torch.nn.Module):
         self.b0_conv2d_b  =  torch.nn.Conv2d(
                 in_channels=128,
                 out_channels=128,
-                kernel_size=(4, 4),
+                kernel_size=(5, 5),
                 padding='same')
         self.b0_batch_n_b =  torch.nn.BatchNorm2d(
                 num_features=128,
@@ -73,7 +65,7 @@ class ResNetModel(torch.nn.Module):
         self.b1_conv2d    =  torch.nn.Conv2d(
                     in_channels=128,
                     out_channels=128,
-                    kernel_size=(4, 4),
+                    kernel_size=(5, 5),
                     padding='same')
         self.b1_batch_n   =  torch.nn.BatchNorm2d(
                 num_features=128,
@@ -82,7 +74,7 @@ class ResNetModel(torch.nn.Module):
         self.b1_conv2d_b  =  torch.nn.Conv2d(
                     in_channels=128,
                     out_channels=128,
-                    kernel_size=(4, 4),
+                    kernel_size=(5, 5),
                     padding='same')
         self.b1_batch_n_b = torch.nn.BatchNorm2d(
                 num_features=128,
@@ -95,7 +87,7 @@ class ResNetModel(torch.nn.Module):
         self.b2_conv2d    = torch.nn.Conv2d(
                     in_channels=128,
                     out_channels=128,
-                    kernel_size=(4, 4),
+                    kernel_size=(5, 5),
                     padding='same')
         self.b2_batch_n   =  torch.nn.BatchNorm2d(
                 num_features=128,
@@ -104,7 +96,7 @@ class ResNetModel(torch.nn.Module):
         self.b2_conv2d_b  = torch.nn.Conv2d(
                     in_channels=128,
                     out_channels=128,
-                    kernel_size=(4, 4),
+                    kernel_size=(5, 5),
                     padding='same')
         self.b2_batch_n_b = torch.nn.BatchNorm2d(
                 num_features=128,
@@ -117,7 +109,7 @@ class ResNetModel(torch.nn.Module):
         self.b3_conv2d    =  torch.nn.Conv2d(
                     in_channels=128,
                     out_channels=128,
-                    kernel_size=(4, 4),
+                    kernel_size=(5, 5),
                     padding='same')
         self.b3_batch_n   = torch.nn.BatchNorm2d(
                 num_features=128,
@@ -126,7 +118,7 @@ class ResNetModel(torch.nn.Module):
         self.b3_conv2d_b  =  torch.nn.Conv2d(
                     in_channels=128,
                     out_channels=128,
-                    kernel_size=(4, 4),
+                    kernel_size=(5, 5),
                     padding='same')
         self.b3_batch_n_b = torch.nn.BatchNorm2d(
                 num_features=128,
@@ -139,7 +131,7 @@ class ResNetModel(torch.nn.Module):
         self.b4_conv2d    =  torch.nn.Conv2d(
                     in_channels=128,
                     out_channels=128,
-                    kernel_size=(4, 4),
+                    kernel_size=(5, 5),
                     padding='same')
         self.b4_batch_n   =  torch.nn.BatchNorm2d(
                 num_features=128,
@@ -148,7 +140,7 @@ class ResNetModel(torch.nn.Module):
         self.b4_conv2d_b  =  torch.nn.Conv2d(
                     in_channels=128,
                     out_channels=128,
-                    kernel_size=(4, 4),
+                    kernel_size=(5, 5),
                     padding='same')
         self.b4_batch_n_b = torch.nn.BatchNorm2d(
                 num_features=128,
@@ -172,7 +164,7 @@ class ResNetModel(torch.nn.Module):
         self.p_dense     =  torch.nn.Linear(
                     in_features=84,
                     out_features=42)
-        self.p_softmax   =  torch.nn.Softmax()
+        self.p_softmax   =  torch.nn.Softmax(dim=1)
 
         # value head
 
@@ -194,14 +186,6 @@ class ResNetModel(torch.nn.Module):
                     in_features=256,
                     out_features=1)
         self.v_tanh      =  torch.nn.Tanh()
-
-        # TODO: mps is slower than cpu. Need debug
-        # self.to("mps")
-        self.to("cpu")
-
-        device = next(self.parameters()).device
-        print(f"model is on {device}")
-        self.device = device
 
 
     def forward(self, x):
@@ -284,3 +268,20 @@ class ResNetModel(torch.nn.Module):
         v = x
 
         return (p, v)
+
+
+class ResNetModelWrapper(ResNetModel):
+
+    def __init__(self):
+        super(ResNetModelWrapper, self).__init__()
+
+        device = next(self.parameters()).device
+        print(f"[sys] model is on {device}")
+        self.device = device
+
+    def predict(self, x):
+        # This is the API client will call
+
+        with torch.no_grad():
+            self.eval()
+            return self.__call__(torch.from_numpy(x).to(self.device))
