@@ -5,6 +5,7 @@
 #
 # Results
 #
+# run_seconds,batch_size,iterations_per_run,device
 # 0.15 ,  1,50,cpu
 # 0.243,  2,50,cpu
 # 0.355,  4,50,cpu
