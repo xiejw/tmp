@@ -6,14 +6,14 @@
 # Results
 #
 # run_seconds,batch_size,iterations_per_run,device
-# 0.15 ,  1,50,cpu
+# 0.150,  1,50,cpu
 # 0.243,  2,50,cpu
 # 0.355,  4,50,cpu
 # 0.463,  8,50,cpu
-# 2.38 , 16,50,cpu
-# 3.36 , 32,50,cpu
-# 3.99 , 64,50,cpu
-# 6.22 ,128,50,cpu
+# 2.380, 16,50,cpu
+# 3.360, 32,50,cpu
+# 3.990, 64,50,cpu
+# 6.220,128,50,cpu
 # 0.332,  1,50,mps
 # 0.305,  2,50,mps
 # 0.199,  4,50,mps
@@ -331,5 +331,5 @@ for device in ['cpu', 'mps']:
         # print("warm up  for 10 times for batch size:", batch_size, "device:", device)
         run(new_pt_m, batch_size, 10, device, a)
 
-        print(f"{run(new_pt_m, batch_size, iterations_per_run, device, a):<5.03},{batch_size:3},{iterations_per_run},{device}")
+        print(f"{run(new_pt_m, batch_size, iterations_per_run, device, a):<5.3f},{batch_size:3},{iterations_per_run},{device}")
 
