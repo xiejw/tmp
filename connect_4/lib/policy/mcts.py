@@ -186,10 +186,14 @@ class MCTSPolicy(Policy):
             moves = self._board.moves
             last_pos = moves[-1].position  # Component's move
 
+            # In normal mcts set up, a new simulation run should be started.
+            # Here we cheat a little bit to to "inherit" knowledge from previous
+            # runs. So the strength should be better.
             new_root = self._root.c.get(last_pos)
             if new_root is None:
                 # This case means that the move by component has never been
                 # consided by this tree before.
+
                 new_board = copy.deepcopy(self._board)  # make a copy
                 new_root = MCTSNode(new_board, self._color, self._model,
                                     inject_noise=self._inject_noise_to_root)
