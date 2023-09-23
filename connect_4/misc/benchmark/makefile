@@ -8,16 +8,16 @@ LDFLAGS  += -Wl,-rpath,${TORCH_DIR}/lib
 LDFLAGS  += -ltorch_cpu -ltorch -lc10
 
 compile:
-	clang++ -std=c++17 ${CFLAGS} ${LDFLAGS} 02_main.cc
+	clang++ -std=c++17 ${CFLAGS} ${LDFLAGS} 01_batch_size.cc
 
 check:
 	python -c 'import torch'
 
-run_02_cc: compile
-	./a.out ~/Desktop/traced_resnet_model.pt
+run_00_py:
+	PYTHONPATH=../../lib python 00_batch_size.py
 
-run_02_py:
-	PYTHONPATH=../../lib python 02_main.py
+run_01_cc: compile
+	./a.out ~/Desktop/traced_resnet_model.pt
 
 clean:
 	rm a.out
