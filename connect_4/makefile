@@ -6,9 +6,12 @@ ifndef ${C4_STATE_FILE}
 endif
 
 PY            = python3
-PY_LIB_PATH   = PYTHONPATH=lib
+PY_LIB_PATH   = PYTHONPATH="lib:cc"
 
 DOCKER_ASSETS = .docker_assets
+
+PYBIND_CC_MOD = cc/xai_c4${shell python3-config --extension-suffix}
+PYBIND_CC_SRC = cc/c4.cc
 
 .PHONY: run check default
 
@@ -17,8 +20,13 @@ default: check run
 run:
 	${PY_LIB_PATH} C4_STATE_FILE=${C4_STATE_FILE} ${PY} cmd/play_with_human.py
 
-check:
-	python3 -c "import torch"
+check: check_pybind_cc
+	python3 -c "import torch; import pybind11; import numpy"
+
+check_pybind_cc: ${PYBIND_CC_MOD}
+
+${PYBIND_CC_MOD}: ${PYBIND_CC_SRC}
+	make -C cc
 
 clean:
 	rm -rf ${DOCKER_ASSETS}
