@@ -29,7 +29,7 @@ ${PYBIND_CC_MOD}: ${PYBIND_CC_SRC}
 	make -C cc
 
 clean:
-	rm -rf ${DOCKER_ASSETS}
+	rm -rf ${DOCKER_ASSETS} && make -C cc clean
 
 build_docker:
 	mkdir -p ${DOCKER_ASSETS} && \

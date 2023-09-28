@@ -9,9 +9,10 @@ CXXFLAGS   += -DC4_FILE_PATH='"${HOME}/Desktop/traced_resnet_model.pt"'
 CXXFLAGS   += -I${TORCH_DIR}/include/
 CXXFLAGS   += -I${TORCH_DIR}/include//torch/csrc/api/include
 
-LDFLAGS  += -L${TORCH_DIR}/lib
-LDFLAGS  += -Wl,-rpath,${TORCH_DIR}/lib
-LDFLAGS  += -ltorch_cpu -ltorch -lc10
+# We dont need torch libraries as python/torch has that already (in runtime)
+# LDFLAGS  += -L${TORCH_DIR}/lib
+# LDFLAGS  += -Wl,-rpath,${TORCH_DIR}/lib
+# LDFLAGS  += -ltorch_cpu -ltorch -lc10
 
 CXXFLAGS  += -O3 -Wall -std=c++17
 CXXFLAGS  += $(shell python3 -m pybind11 --includes)
