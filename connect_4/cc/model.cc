@@ -18,12 +18,12 @@ c4_model_predict(const color_t next_player_color, const color_t *board,
         error_t err = OK;
 
         // debug only
-        {
-                DEBUG() << "[debug] calling model\n";
+        if (DEBUG2_ENABLED) {
+                DEBUG2() << "[debug] calling model\n";
                 for (int i = 0; i < pos_count; i++) {
-                        DEBUG() << board[i] << ",";
+                        DEBUG2() << board[i] << ",";
                 }
-                DEBUG() << "\n";
+                DEBUG2() << "\n";
         }
 
         torch::Tensor input =
@@ -52,7 +52,7 @@ c4_model_predict(const color_t next_player_color, const color_t *board,
                 }
         }
 
-        DEBUG() << "[debug] tensor input: " << input << "\n";
+        DEBUG2() << "[debug] tensor input: " << input << "\n";
         err = call_model(input, prob, value);
         if (OK != err) {
                 std::cout << "[error] failed to get pred\n";
@@ -64,6 +64,14 @@ c4_model_predict(const color_t next_player_color, const color_t *board,
 
 static bool                       module_loaded = false;
 static torch::jit::script::Module module;
+
+void
+c4_model_cleanup()
+{
+        DEBUG2() << "[debug] cleanup torch module\n";
+        module.~Module();
+        module_loaded = false;
+}
 
 error_t
 call_model(torch::Tensor &input, f32_t **prob, f32_t *value)

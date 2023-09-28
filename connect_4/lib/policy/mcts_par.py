@@ -23,6 +23,9 @@ class MCTSParPolicy(Policy):
         self._iterations = iterations
         self.name = name if name else "mcts_par_" + color
 
+    def __del__(self):
+        xai_c4.cleanup()
+
     def next_position(self):
         # TODO this is an optimize we can do is incremental build the board in
         # cc side.

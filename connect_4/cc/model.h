@@ -37,4 +37,6 @@ error_t c4_model_predict(
     /* outputs */
     f32_t **prob, f32_t *value);
 
+void c4_model_cleanup();
+
 #endif  // C4_MODEL_H_

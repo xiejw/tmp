@@ -46,12 +46,20 @@ select_next_move(const std::vector<int> &v, int next_player_color)
         return pos_max;
 }
 
+void
+cleanup()
+{
+        c4_model_cleanup();
+}
+
 PYBIND11_MODULE(xai_c4, m)
 {
         m.doc() = "parallel mcts algorithm";  // optional module docstring
 
         m.def("select_next_move", &select_next_move,
               "A function to select next pos to play");
+
+        m.def("cleanup", &cleanup, "A function to clean up");
 }
 
 std::vector<int>
