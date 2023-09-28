@@ -4,7 +4,7 @@
 
 TORCH_DIR = $(shell python -c 'import torch; print(torch.__path__[0])')
 
-CXXFLAGS   += -DC4_FILE_PATH='"/Users/jianwei.xie/Desktop/traced_resnet_model.pt"'
+CXXFLAGS   += -DC4_FILE_PATH='"${HOME}/Desktop/traced_resnet_model.pt"'
 
 CXXFLAGS   += -I${TORCH_DIR}/include/
 CXXFLAGS   += -I${TORCH_DIR}/include//torch/csrc/api/include
