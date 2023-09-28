@@ -41,7 +41,9 @@ class MCTSParPolicy(Policy):
 
                 pos[off + col] = 1 if color == Color.BLACK else -1
 
-        pos_idx = xai_c4.select_next_move(pos)
+        pos_idx = xai_c4.select_next_move(
+                pos,
+                1 if self._color == Color.BLACK else -1)
         row = pos_idx // col_count
         col = pos_idx % col_count
 
