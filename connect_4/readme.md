@@ -15,6 +15,20 @@ of one's own discs.
 Let's Play
 ==========
 
+### Docker on arm64
+
+A little faster
+```
+docker run --rm -ti xiejw/connect_4_pt_medium
+```
+
+A little slower (but stronger)
+```
+docker run --rm -ti xiejw/connect_4_pt
+```
+
+### Local Python
+
 - Download the pytorch (binary) state file, if absent, from
   [here](https://github.com/xiejw/tmp/releases).
 - Sanity check python dependencies:

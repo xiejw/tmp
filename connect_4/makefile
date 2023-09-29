@@ -17,11 +17,14 @@ PYBIND_CC_SRC = cc/c4.cc
 
 default: check run
 
-run:
+run: check_pybind_cc
 	${PY_LIB_PATH} C4_STATE_FILE=${C4_STATE_FILE} ${PY} cmd/play_with_human.py
 
-check: check_pybind_cc
-	python3 -c "import torch; import pybind11; import numpy"
+check:
+	python3 -c "import pybind11; import numpy" && \
+		python3 -c "import torch; assert torch.backends.mps.is_available()" && \
+		clang --version > /dev/null && \
+		echo "passed"
 
 check_pybind_cc: ${PYBIND_CC_MOD}
 
