@@ -1,0 +1,8 @@
+# vim: ft=help
+
+================================================================================
+SECURITY~
+
+CA CERTIFICATES~
+
+Stored in `$JAVA_HOME/lib/security/cacerts`

@@ -1,0 +1,7 @@
+# vim: ft=help
+
+================================================================================
+JEP 396: Strongly Encapsulate JDK Internals by Default
+    https://openjdk.org/jeps/396
+
+

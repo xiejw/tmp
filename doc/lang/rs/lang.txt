@@ -1,0 +1,19 @@
+# vim: ft=help
+
+================================================================================
+rust
+
+
+dyn~
+
+https://doc.rust-lang.org/std/keyword.dyn.html
+
+Generic (`fn foo<W: Write>(w :W)`), `impl Trait` in return type is static
+dispatch. To be specific
+- The compiler genererates specific code for generic.
+- The compiler needs to know the concrete type for `impl Trait` and
+  staticically replace the type under the hood.
+
+But for `dyn Trait`, it is fat pointer and users need to pay the cost for
+function pointer.
+
