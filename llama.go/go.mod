@@ -1,3 +1,3 @@
-module github.com/xiejw/tmp/llama.go
+module llama
 
 go 1.21.3

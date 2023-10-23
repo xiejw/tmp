@@ -1,5 +1,7 @@
+LLAMA_PKG = llama
+
 run:
 	go run cmd/main.go
 
 fmt:
-	go fmt github.com/xiejw/tmp/llama.go/cmd/...
+	go fmt ${LLAMA_PKG}/cmd/...
