@@ -1,12 +1,7 @@
-.PHONY: tictactoe connect4
+.PHONY: connect4
 
 compile:
-	@echo "make t or make c"
-
-t: tictactoe
-
-tictactoe:
-	go run tictactoe/main.go
+	@echo " make c"
 
 c: connect4
 	go run connect4/main.go
