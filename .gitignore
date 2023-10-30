@@ -2,5 +2,7 @@
 *.swp
 *.swo
 
+# c and cc
 .o
 .build
+build
