@@ -3,6 +3,7 @@
 *.swo
 
 # c and cc
+a.out
 .o
 .build
 build
