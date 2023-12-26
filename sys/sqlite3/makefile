@@ -1,3 +1,5 @@
+# In order to use sqlite3 in debian, install
+# - sudo apt install libsqlite3-dev
 BIN = a.out
 
 .PHONY: release 01
