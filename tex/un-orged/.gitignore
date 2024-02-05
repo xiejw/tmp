@@ -1,0 +1,7 @@
+# vim
+*.swo
+*.swp
+
+# tex
+*.log
+*.pdf

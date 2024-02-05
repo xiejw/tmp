@@ -1,0 +1,24 @@
+\input format
+
+% {{{1 File Structure Related Macro
+%
+% {{{2
+% A customized `section` macro.
+%
+% This is very similar to the `\date` macro in the format.tex file.
+% - Insert a title in bold.
+% - Skip 5pt vertically.
+% - The first paragraph has no indent. This is done via the \everypar, which is
+%   invoked at the start of each paragraph. It sets an empty box at first and
+%   resets itself.
+% - [New change] A black triangle is inserted left to the margin.
+\def\section#1{\vskip15pt \noindent{\llap{\raise0.95pt\hbox{$\blacktriangleright$ }}\bf #1}\hfill\vskip 5pt
+  \everypar={{\setbox0\lastbox}\everypar={}}}
+
+\def\subsection#1{\vskip10pt \noindent{\underbar{\bf #1}}\hfill\vskip 5pt
+  \everypar={{\setbox0\lastbox}\everypar={}}}
+
+% {{{1 Math Macros
+%
+\def\loss{{\rm Loss}}
+\def\dv{{\rm d}}

@@ -1,0 +1,11 @@
+The TeXBook
+
+chp 3 Controlling TeX
+  page 10
+    \show\cs gives the meaning for the control seq
+
+chp 4 Fonts of Type
+  page 13
+    \rm \sl \it \tt \bf
+    switch the font inside { } group
+    \/   {\it italicitzed\/}

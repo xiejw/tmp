@@ -1,0 +1,43 @@
+\hsize=5in
+\noindent{}{\bf Dynamic programming}, according to wikipedia, is both a
+mathematical optimization method and a computer programming method. The method
+was developed by Richard Bellman in the 1950s and has found applications in
+numerous fields, from aerospace engineering to economics.  In both contexts it
+refers to simplifying a complicated problem by breaking it down into simpler
+sub-problems in a recursive manner.
+
+If sub-problems can be nested recursively inside larger problems, so that
+dynamic programming methods are applicable, then there is a relation between the
+value of the larger problem and the values of the sub-problems.[1] In the
+optimization literature this relationship is called the Bellman equation.
+
+In computer programming, there are two key attributes that a problem must have
+in order for dynamic programming to be applicable: optimal substructure and
+overlapping sub-problems. If a problem can be solved by combining optimal
+solutions to non-overlapping sub-problems, the strategy is called ``divide and
+conquer'' instead. This is why merge sort and quick sort are not classified as
+dynamic programming problems.
+
+\vskip \baselineskip
+
+\noindent{}{\bf Control} vs {\bf Prediction}: A prediction task in RL is where
+the policy is supplied, and the goal is to measure how well it performs.  A
+control task in RL is where the policy is not fixed, and the goal is to find the
+optimal policy. That is, to find the policy $\pi(a|s)$ that maximises the
+expected total reward from any given state.
+
+\vskip \baselineskip
+
+\noindent{}{\bf ``Without a model, however, state values alone are not
+sufficient.'' Why?} If you use an action value estimate, then the agent can
+select the greedy action simply:
+$$
+\pi(s) = \arg\max_a Q(s,a)
+$$
+If you have state values, then the agent can select the greedy action directly
+only if it knows the model distribution $p(r, s'|s, a)$, i.e.,
+$$
+\pi(s) = \arg\max_a \sum_{s,r'} p(r, s'|s, a) (r + \gamma v(s'))
+$$
+
+\end
