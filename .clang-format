@@ -1,16 +1,9 @@
 ---
 Language:        Cpp
-# BEGIN xiejw Changed (16.0)
-InsertNewlineAtEOF: true
-RemoveSemicolon: true
-AlignTrailingComments:
-  Kind: Always
-  OverEmptyLines: 1
-# END xiejw
 # BasedOnStyle:  Google
-AccessModifierOffset: -1
 # BEGIN xiejw Changed
-AlignArrayOfStructures: Left
+AccessModifierOffset: -2
+AlignArrayOfStructures: Right
 # End xiejw Changed
 AlignAfterOpenBracket: Align
 # BEGIN xiejw Changed
@@ -20,6 +13,7 @@ AlignConsecutiveDeclarations: true
 # End xiejw Changed
 AlignEscapedNewlines: Left
 AlignOperands:   true
+AlignTrailingComments: true
 AllowAllArgumentsOnNextLine: true
 AllowAllConstructorInitializersOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: true
@@ -102,7 +96,7 @@ IndentCaseLabels: false
 # END xiejw Changed
 IndentPPDirectives: None
 # BEGIN xiejw Changed
-IndentWidth:     8
+IndentWidth:     4
 # END xiejw Changed
 IndentWrappedFunctionNames: false
 JavaScriptQuotes: Leave
@@ -181,5 +175,12 @@ StatementMacros:
   - QT_REQUIRE_VERSION
 TabWidth:        8
 UseTab:          Never
+# BEGIN xiejw Changed
+SpacesInParens: Custom
+SpacesInParensOptions:
+  InConditionalStatements: true
+  InEmptyParentheses: true
+  Other: true
+# END xiejw Changed
 ...
 
