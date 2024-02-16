@@ -1,3 +1,2 @@
 clean:
-	find . -name '.build*' -exec rm -rf {} \;
-	find . -name a.out -exec rm {} \;
+	go run ~/Workspace/y/tools/delete_unused_dirs.go
