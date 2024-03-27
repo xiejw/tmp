@@ -2,12 +2,14 @@ Compilation
 
 To compile with local pytorch
 ```
-make
+make [CPU=1]
 ```
 
 To compile with libtorch
 ```
 # macOS
 # - brew install libomp
-make LIBTORCH=1
+# Linux
+# - n/a
+make LIBTORCH=1 [CPU=1]
 ```

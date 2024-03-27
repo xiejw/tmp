@@ -16,6 +16,10 @@ endif
 
 LDFLAGS += -ltorch_cpu -ltorch -lc10
 
+ifdef CPU
+CFLAGS        += -DCPU_DEVICE_ONLY=1
+endif
+
 run: compile
 	./a.out
 
@@ -27,3 +31,6 @@ check:
 
 clean:
 	rm a.out
+
+fmt:
+	~/Workspace/y/tools/clang_format_all.sh .
