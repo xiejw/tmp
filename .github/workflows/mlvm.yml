@@ -1,0 +1,19 @@
+name: mlvm
+run-name: ${{ github.actor }} is running tests for ${{ github.workflow }}
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tmp
+        uses: actions/checkout@v4
+        with:
+          path: tmp
+      - uses: ./tmp/.github/actions/base
+        with:
+          require_rs: true
+      - name: Run ${{ github.workflow }} Test
+        run: make -C ${{ github.workspace }}/tmp/focus/mlvm/${{ github.workflow }} clean test
+      - name: Run ${{ github.workflow }} Release
+        run: make -C ${{ github.workspace }}/tmp/focus/mlvm/${{ github.workflow }} clean release
+
