@@ -13,7 +13,7 @@ jobs:
         with:
           require_rs: true
       - name: Run ${{ github.workflow }} Test
-        run: make -C ${{ github.workspace }}/tmp/focus/mlvm/${{ github.workflow }} clean test
+        run: make -C ${{ github.workspace }}/tmp/focus/${{ github.workflow }} clean test
       - name: Run ${{ github.workflow }} Release
-        run: make -C ${{ github.workspace }}/tmp/focus/mlvm/${{ github.workflow }} clean release
+        run: make -C ${{ github.workspace }}/tmp/focus/${{ github.workflow }} clean release
 
