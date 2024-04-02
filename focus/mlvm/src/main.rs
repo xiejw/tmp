@@ -9,9 +9,19 @@ alpha = _{ 'a'..'z' | 'A'..'Z' }
 digit = _{ '0'..'9' }
 ident = @{ alpha ~ (alpha | digit)* }
 
-expr = { ident }
+// keywords
+let = { "let" }
 
-line = { "let"? ~ ident ~ "="  ~ expr ~ ";" }
+// expr
+term = { ident | "(" ~ expr ~ ")" }
+expr = { term }
+
+// statement
+let_statement  = { let ~ ident ~ "="  ~ expr ~ ";" }
+assgin_statement = { ident ~ "="  ~ expr ~ ";" }
+
+// program
+line = { let_statement | assgin_statement }
 program_unit = { line+ }
 program = _{ SOI ~ program_unit ~ EOI }
 "#]
@@ -27,12 +37,23 @@ fn main() {
         .into_inner();
 
     let lines = pairs
-        .map(|pair| (pair.as_str(), pair.as_rule()))
-        .collect::<Vec<(&str, Rule)>>();
+        .map(|pair| {
+            (
+                pair.as_str(),
+                pair.as_rule(),
+                pair.into_inner().next().unwrap().as_rule(),
+            )
+        })
+        .collect::<Vec<(&str, Rule, Rule)>>();
 
     println!("lines total: {}", lines.len());
 
     for l in &lines {
-        println!("program line: {:?}, {}", l.1, l.0);
+        println!(
+            "program line: {:?} / ({:<16}), {}",
+            l.1,
+            format!("{:?}", l.2),
+            l.0
+        );
     }
 }
