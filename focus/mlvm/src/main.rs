@@ -13,7 +13,8 @@ ident = @{ alpha ~ (alpha | digit)* }
 let = { "let" }
 
 // expr
-term = { ident | "(" ~ expr ~ ")" }
+fn_call = { ident ~ "("  ~ (expr  ~ ( "," ~ expr)* )?  ~ ")" }
+term = { fn_call | ident | "(" ~ expr ~ ")" }
 expr = { term }
 
 // statement
@@ -27,7 +28,7 @@ program = _{ SOI ~ program_unit ~ EOI }
 "#]
 pub struct ProgramParser;
 
-static SAMPLE: &str = "let a = b; \n c = a; c = b;\n ";
+static SAMPLE: &str = "let a = b; \n c = add(a, b); c = b;\n ";
 
 fn main() {
     let pairs = ProgramParser::parse(Rule::program, SAMPLE)
