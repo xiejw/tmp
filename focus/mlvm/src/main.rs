@@ -1,3 +1,4 @@
+use pest::iterators::Pair;
 use pest::Parser;
 use pest_derive::Parser;
 
@@ -37,24 +38,31 @@ fn main() {
         .unwrap()
         .into_inner();
 
-    let lines = pairs
-        .map(|pair| {
-            (
-                pair.as_str(),
-                pair.as_rule(),
-                pair.into_inner().next().unwrap().as_rule(),
-            )
-        })
-        .collect::<Vec<(&str, Rule, Rule)>>();
+    for line in pairs {
+        process_line(line);
+    }
+}
 
-    println!("lines total: {}", lines.len());
+fn process_line(pair: Pair<Rule>) {
+    let rule = &pair.as_rule();
+    let str_str = &pair.as_str().to_string();
+    let statement = pair.into_inner().next().unwrap();
+    println!(
+        "program line: {:?} / ({:<16}), {}",
+        rule,
+        format!("{:?}", statement.as_rule()),
+        str_str
+    );
 
-    for l in &lines {
-        println!(
-            "program line: {:?} / ({:<16}), {}",
-            l.1,
-            format!("{:?}", l.2),
-            l.0
-        );
+    match statement.as_rule() {
+        Rule::let_statement => {
+            println!("-> see let");
+        }
+        Rule::assgin_statement => {
+            println!("-> see assgin_statement");
+        }
+        _ => {
+            unimplemented!();
+        }
     }
 }
