@@ -24,12 +24,11 @@ digit = _{ '0'..'9' }
 ident = @{ alpha ~ (alpha | digit)* }
 
 // keywords
-let = { "let" }
+let = _{ "let" }
 
 // expr
 fn_call = { ident ~ "("  ~ (expr  ~ ( "," ~ expr)* )?  ~ ")" }
-term = { fn_call | ident | "(" ~ expr ~ ")" }
-expr = { term }
+expr = { fn_call | ident | "(" ~ expr ~ ")" }
 
 // statement
 let_statement  = { let ~ ident ~ "="  ~ expr ~ ";" }
