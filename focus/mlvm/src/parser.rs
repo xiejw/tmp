@@ -40,4 +40,4 @@ line = { let_statement | assgin_statement }
 program_unit = { line+ }
 program = _{ SOI ~ program_unit ~ EOI }
 "#]
-pub struct ProgramParser;
+struct ProgramParser;

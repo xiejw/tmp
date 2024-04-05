@@ -1,8 +1,8 @@
 use std::error::Error;
 
-use crate::parser::Rule;
-
 use pest::iterators::Pairs;
+
+use crate::parser::Rule;
 
 //
 // basic data structure for the ast
@@ -153,7 +153,7 @@ mod internal {
                 .map(|arg| Box::new(process_ident(arg).unwrap()))
                 .collect(),
         };
-        debug_assert!(r.paths.len() >= 1);
+        debug_assert!(!r.paths.is_empty());
         Ok(r)
     }
 }
