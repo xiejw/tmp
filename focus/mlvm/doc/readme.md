@@ -20,9 +20,11 @@ Function definition with path
 -----------------------------
 Fun definition can contain path as well. The arg must be `@`. Inside the func,
 global `@` is not visible anymore.
+
+For example, the example above can be rewritten as the following.
 ```
 fn add3(a, b, @c) {
-  return add(add(a, b), @c.w)
+  return add(add(a, b), @c.c)
 }
 let a = @a;
 let b = @a;
