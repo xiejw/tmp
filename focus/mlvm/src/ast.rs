@@ -41,6 +41,7 @@ pub struct Ident {
 #[derive(Debug)]
 pub struct FnCall {
     pub name: String,
+    pub args: Vec<Box<Expr>>,
 }
 
 #[derive(Debug)]
@@ -108,9 +109,7 @@ mod internal {
         match expr.as_rule() {
             Rule::fn_call => Ok(Expr::FnCall(Box::new(process_fncall(expr)?))),
             Rule::ident => Ok(Expr::Ident(Box::new(process_ident(expr)?))),
-            Rule::expr => {
-                unimplemented!();
-            }
+            Rule::expr => Ok(Expr::Expr(Box::new(process_expr(expr)?))),
             _ => unimplemented!(),
         }
     }
@@ -126,8 +125,15 @@ mod internal {
         debug_assert!(Rule::fn_call == pair.as_rule());
 
         let mut pairs = pair.into_inner();
-        Ok(FnCall {
+        let mut r = FnCall {
             name: pairs.next().unwrap().as_str().to_string(),
-        })
+            args: Vec::new(),
+        };
+
+        for arg in pairs {
+            r.args.push(Box::new(process_expr(arg)?));
+        }
+
+        Ok(r)
     }
 }
