@@ -45,9 +45,15 @@ pub struct FnCall {
 }
 
 #[derive(Debug)]
+pub struct PathLookup {
+    pub paths: Vec<Box<Ident>>,
+}
+
+#[derive(Debug)]
 pub enum Expr {
     FnCall(Box<FnCall>),
     Ident(Box<Ident>),
+    PathLookup(Box<PathLookup>),
     Expr(Box<Expr>),
 }
 
@@ -110,6 +116,7 @@ mod internal {
             Rule::fn_call => Ok(Expr::FnCall(Box::new(process_fncall(expr)?))),
             Rule::ident => Ok(Expr::Ident(Box::new(process_ident(expr)?))),
             Rule::expr => Ok(Expr::Expr(Box::new(process_expr(expr)?))),
+            Rule::path_lookup => Ok(Expr::PathLookup(Box::new(process_path_lookup(expr)?))),
             _ => unimplemented!(),
         }
     }
@@ -134,6 +141,19 @@ mod internal {
             r.args.push(Box::new(process_expr(arg)?));
         }
 
+        Ok(r)
+    }
+
+    fn process_path_lookup<'a>(pair: Pair<Rule>) -> AstResult<'a, PathLookup> {
+        debug_assert!(Rule::path_lookup == pair.as_rule());
+
+        let pairs = pair.into_inner();
+        let r = PathLookup {
+            paths: pairs
+                .map(|arg| Box::new(process_ident(arg).unwrap()))
+                .collect(),
+        };
+        debug_assert!(r.paths.len() >= 1);
         Ok(r)
     }
 }

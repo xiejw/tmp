@@ -22,13 +22,14 @@ WHITESPACE = _{ " " | "\t" | "\n" }
 alpha = _{ 'a'..'z' | 'A'..'Z' }
 digit = _{ '0'..'9' }
 ident = @{ alpha ~ (alpha | digit)* }
+path_lookup = { "@" ~ (ident ~ "." )* ~ ident }
 
 // keywords
 let = _{ "let" }
 
 // expr
 fn_call = { ident ~ "("  ~ (expr  ~ ( "," ~ expr)* )?  ~ ")" }
-expr = { fn_call | ident | "(" ~ expr ~ ")" }
+expr = { fn_call | ident | path_lookup | "(" ~ expr ~ ")" }
 
 // statement
 let_statement  = { let ~ ident ~ "="  ~ expr ~ ";" }

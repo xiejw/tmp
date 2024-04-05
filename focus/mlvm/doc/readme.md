@@ -22,7 +22,7 @@ global `@` is not visible anymore.
 
 For example, the example above can be rewritten as the following.
 ```
-fn add3(a, b, @c) {
+fn add3(a, b, c: @) {
   return add(add(a, b), @c.c)
 }
 let a = @a;
