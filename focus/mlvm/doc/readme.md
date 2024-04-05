@@ -11,7 +11,6 @@ All other names are tensors. Path leaves be tensors as well.
 ```
 let a = @a;
 let b = @a;
-let c = @b.a;
 let d = add(add(a, b) + @b.c);
 print(c);
 ```
