@@ -78,6 +78,17 @@ pub fn build_ast(program: Pairs<Rule>) -> AstResult<Tree> {
     Ok(tree)
 }
 
+//
+// public trait for visitor
+//
+
+pub trait Visitor<T> {
+    fn visit_statement(&mut self, s: &Statement) -> T;
+    fn visit_let_statement(&mut self, s: &LetStatement) -> T;
+    fn visit_assign_statement(&mut self, s: &AssignStatement) -> T;
+    fn visit_expr(&mut self, s: &Expr) -> T;
+}
+
 mod internal {
     use super::*;
     use crate::parser::Rule;

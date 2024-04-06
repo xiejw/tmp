@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::ast::*;
+use crate::ast::{AssignStatement, Expr, LetStatement, Statement, Tree, Visitor};
 
 pub fn compile(ast: &Tree) -> Result<(), Box<dyn Error>> {
     // check type
@@ -11,13 +11,6 @@ pub fn compile(ast: &Tree) -> Result<(), Box<dyn Error>> {
         codegen.visit_statement(s);
     }
     Ok(())
-}
-
-trait Visitor<T> {
-    fn visit_statement(&mut self, s: &Statement) -> T;
-    fn visit_let_statement(&mut self, s: &LetStatement) -> T;
-    fn visit_assign_statement(&mut self, s: &AssignStatement) -> T;
-    fn visit_expr(&mut self, s: &Expr) -> T;
 }
 
 struct CodeGen {}
