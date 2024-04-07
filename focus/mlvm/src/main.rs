@@ -1,4 +1,4 @@
-pub mod analysis;
+pub mod sema;
 pub mod ast;
 pub mod codegen;
 pub mod parser;
