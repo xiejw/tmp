@@ -11,6 +11,12 @@ use crate::parser::Rule;
 type AstResult<'a, T> = Result<T, Box<dyn Error>>;
 
 #[derive(Debug)]
+pub enum Type {
+    Tensor,
+    Path,
+}
+
+#[derive(Debug)]
 pub struct Tree {
     pub statements: Vec<Statement>,
 }
@@ -36,17 +42,20 @@ pub struct AssignStatement {
 #[derive(Debug)]
 pub struct Ident {
     pub name: String,
+    pub tp: Option<Type>,
 }
 
 #[derive(Debug)]
 pub struct FnCall {
     pub name: String,
     pub args: Vec<Box<Expr>>,
+    pub tp: Option<Type>,
 }
 
 #[derive(Debug)]
 pub struct PathLookup {
-    pub paths: Vec<Box<Ident>>,
+    pub paths: Vec<Ident>,
+    pub tp: Option<Type>,
 }
 
 #[derive(Debug)]
@@ -58,9 +67,35 @@ pub enum Expr {
 }
 
 impl Tree {
-    fn new() -> Tree {
+    fn new() -> Self {
         Tree {
             statements: Vec::new(),
+        }
+    }
+}
+
+impl Ident {
+    fn new(name: &str) -> Self {
+        Ident {
+            name: name.to_string(),
+            tp: None,
+        }
+    }
+}
+
+impl PathLookup {
+    fn new(paths: Vec<Ident>) -> Self {
+        PathLookup { paths, tp: None }
+    }
+}
+
+impl Expr {
+    pub fn get_type(&self) -> Option<&Type> {
+        match self {
+            Expr::FnCall(ref call) => call.tp.as_ref(),
+            Expr::Ident(ref id) => id.tp.as_ref(),
+            Expr::PathLookup(ref path) => path.tp.as_ref(),
+            Expr::Expr(ref expr) => expr.get_type(),
         }
     }
 }
@@ -87,6 +122,13 @@ pub trait Visitor<T> {
     fn visit_let_statement(&mut self, s: &LetStatement) -> T;
     fn visit_assign_statement(&mut self, s: &AssignStatement) -> T;
     fn visit_expr(&mut self, s: &Expr) -> T;
+}
+
+pub trait VisitorMut<T> {
+    fn visit_statement(&mut self, s: &mut Statement) -> T;
+    fn visit_let_statement(&mut self, s: &mut LetStatement) -> T;
+    fn visit_assign_statement(&mut self, s: &mut AssignStatement) -> T;
+    fn visit_expr(&mut self, s: &mut Expr) -> T;
 }
 
 mod internal {
@@ -134,9 +176,7 @@ mod internal {
 
     fn process_ident<'a>(pair: Pair<Rule>) -> AstResult<'a, Ident> {
         debug_assert!(Rule::ident == pair.as_rule());
-        Ok(Ident {
-            name: pair.as_str().to_string(),
-        })
+        Ok(Ident::new(pair.as_str()))
     }
 
     fn process_fncall<'a>(pair: Pair<Rule>) -> AstResult<'a, FnCall> {
@@ -146,6 +186,7 @@ mod internal {
         let mut r = FnCall {
             name: pairs.next().unwrap().as_str().to_string(),
             args: Vec::new(),
+            tp: None,
         };
 
         for arg in pairs {
@@ -159,11 +200,7 @@ mod internal {
         debug_assert!(Rule::path_lookup == pair.as_rule());
 
         let pairs = pair.into_inner();
-        let r = PathLookup {
-            paths: pairs
-                .map(|arg| Box::new(process_ident(arg).unwrap()))
-                .collect(),
-        };
+        let r = PathLookup::new(pairs.map(|arg| process_ident(arg).unwrap()).collect());
         debug_assert!(!r.paths.is_empty());
         Ok(r)
     }
