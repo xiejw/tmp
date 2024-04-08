@@ -4,17 +4,26 @@ use pest::iterators::Pairs;
 
 use crate::parser::Rule;
 
-//
-// basic data structure for the ast
-//
-
 type AstResult<'a, T> = Result<T, Box<dyn Error>>;
+
+//
+// type
+//
 
 #[derive(Debug)]
 pub enum Type {
     Tensor,
     Path,
 }
+
+pub struct FnSig {
+    pub ret: Type,
+    pub args: Vec<Type>,
+}
+
+//
+// basic data structure for the ast
+//
 
 #[derive(Debug)]
 pub struct Tree {
@@ -122,6 +131,9 @@ pub trait Visitor<T> {
     fn visit_let_statement(&mut self, s: &LetStatement) -> T;
     fn visit_assign_statement(&mut self, s: &AssignStatement) -> T;
     fn visit_expr(&mut self, s: &Expr) -> T;
+    fn visit_ident(&mut self, s: &Ident) -> T;
+    fn visit_fn_call(&mut self, s: &FnCall) -> T;
+    fn visit_path_lookup(&mut self, s: &PathLookup) -> T;
 }
 
 pub trait VisitorMut<T> {
@@ -129,6 +141,9 @@ pub trait VisitorMut<T> {
     fn visit_let_statement(&mut self, s: &mut LetStatement) -> T;
     fn visit_assign_statement(&mut self, s: &mut AssignStatement) -> T;
     fn visit_expr(&mut self, s: &mut Expr) -> T;
+    fn visit_ident(&mut self, s: &mut Ident) -> T;
+    fn visit_fn_call(&mut self, s: &mut FnCall) -> T;
+    fn visit_path_lookup(&mut self, s: &mut PathLookup) -> T;
 }
 
 mod internal {

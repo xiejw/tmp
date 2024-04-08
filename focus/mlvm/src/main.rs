@@ -1,18 +1,21 @@
-pub mod sema;
 pub mod ast;
 pub mod codegen;
 pub mod parser;
+pub mod sema;
 
-static SAMPLE: &str = "let a = @weights.b; \n c = add(a, (b)); c = b;\n ";
+static SAMPLE: &str = "let a = @weights.b; \n let c = add(a, (a)); let b = c;\n ";
 
 fn main() {
     println!("===== PROGRAM =====");
     println!("```\n{}\n```\n", SAMPLE);
     let pairs = parser::parse(SAMPLE).unwrap();
 
-    let tree = ast::build_ast(pairs).unwrap();
-    // println!("===== AST     =====");
+    println!("===== AST     =====");
+    let mut tree = ast::build_ast(pairs).unwrap();
     // DEBUG: println!("{:#?}", tree);
+
+    println!("===== SEMA    =====");
+    sema::run(&mut tree).unwrap();
 
     println!("===== CODEGEN =====");
     codegen::compile(&tree).unwrap();
