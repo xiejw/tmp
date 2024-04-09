@@ -1,15 +1,12 @@
-use crate::ast::{FnSig, Type};
-pub use ctx::Context;
+use crate::ast::{FnSig, Tree, Type};
+use ctx::Context;
 use error::{AnalysisError, AnalysisResult};
+use pass::Pass;
 
 mod decl_check;
 mod type_check;
 
-pub trait Pass<T> {
-    fn run(&mut self, tree: &mut super::ast::Tree) -> AnalysisResult<T>;
-}
-
-pub fn run(tree: &mut super::ast::Tree) -> AnalysisResult<()> {
+pub fn run(tree: &mut Tree) -> AnalysisResult<()> {
     let mut ctx = Context::default();
     ctx.fn_sigs.insert(
         "add".to_string(),
@@ -18,8 +15,16 @@ pub fn run(tree: &mut super::ast::Tree) -> AnalysisResult<()> {
             args: vec![Type::Tensor, Type::Tensor],
         },
     );
-    let mut pass = decl_check::new(&ctx);
-    pass.run(tree)
+
+    decl_check::new(&ctx).run(tree)?;
+    type_check::new(&ctx).run(tree)?;
+    Ok(())
+}
+
+mod pass {
+    pub trait Pass<T> {
+        fn run(&mut self, tree: &mut super::Tree) -> super::AnalysisResult<T>;
+    }
 }
 
 mod error {
