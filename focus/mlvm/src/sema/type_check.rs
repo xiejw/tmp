@@ -41,6 +41,7 @@ impl<'a> Pass<()> for TypeCheck<'a> {
             }
 
             if !self.any_progress {
+                // TODO improve the error reporting for the first missing type.
                 break Err(AnalysisError::new("type inf cannot be done".to_string()));
             }
         }
@@ -80,20 +81,37 @@ impl<'a> VisitorMut<AnalysisResult<TypeResult>> for TypeCheck<'a> {
     }
 
     fn visit_ident(&mut self, i: &mut Ident) -> AnalysisResult<TypeResult> {
-        //let name = &i.name;
-        //if !self.scope.contains_key(name) {
-        //    Err(AnalysisError::new(format!(
-        //        "var `{}` has not been defined yet",
-        //        name
-        //    )))
-        //} else {
-        //    Ok(())
-        //}
-        Ok(None)
+        match (i.tp, self.scope.get(&i.name)) {
+            (None, None) => Ok(None),
+            (Some(ref ident_tp), Some(recorded_tp)) => {
+                if *ident_tp == *recorded_tp {
+                    Ok(Some(*ident_tp))
+                } else {
+                    Err(error_str(format!(
+                        "mismatch type for {:?} vs {:?}",
+                        ident_tp, recorded_tp
+                    )))
+                }
+            }
+            (Some(ref tp), None) => {
+                self.scope.insert(i.name.clone(), *tp);
+                self.any_progress = true;
+                Ok(Some(*tp))
+            }
+            (None, Some(tp)) => {
+                i.tp = Some(*tp);
+                self.any_progress = true;
+                Ok(Some(*tp))
+            }
+        }
     }
 
     fn visit_fn_call(&mut self, f: &mut FnCall) -> AnalysisResult<TypeResult> {
-        Ok(None)
+        let fn_sigs = &self.ctx.fn_sigs;
+        match fn_sigs.get(&f.name) {
+            None => Err(error_str(format!("fn {} is not defined", f.name))),
+            _ => unimplemented!(),
+        }
         //for arg in f.args.iter_mut().rev() {
         //    self.visit_expr(arg.borrow_mut())?;
         //}
@@ -107,8 +125,9 @@ impl<'a> VisitorMut<AnalysisResult<TypeResult>> for TypeCheck<'a> {
         //}
     }
 
-    fn visit_path_lookup(&mut self, _p: &mut PathLookup) -> AnalysisResult<TypeResult> {
-        Ok(None)
+    fn visit_path_lookup(&mut self, p: &mut PathLookup) -> AnalysisResult<TypeResult> {
+        //
+        Ok(p.tp)
     }
 
     fn visit_expr(&mut self, e: &mut Expr) -> AnalysisResult<TypeResult> {
@@ -119,4 +138,19 @@ impl<'a> VisitorMut<AnalysisResult<TypeResult>> for TypeCheck<'a> {
             Expr::Expr(ref mut expr) => self.visit_expr(expr.borrow_mut()),
         }
     }
+}
+
+//fn assign_type_to_expr() {
+//}
+//
+//fn assign_type_to_ident(i: &mut Ident) -> Anan {
+//}
+
+use std::error::Error;
+fn error(msg: &str) -> Box<AnalysisError> {
+    AnalysisError::new(msg.to_string())
+}
+
+fn error_str(msg: String) -> Box<AnalysisError> {
+    AnalysisError::new(msg)
 }

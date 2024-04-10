@@ -10,7 +10,7 @@ type AstResult<'a, T> = Result<T, Box<dyn Error>>;
 // type
 //
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Type {
     Tensor,
     Path,

@@ -16,6 +16,7 @@ fn main() {
 
     println!("===== SEMA    =====");
     sema::run(&mut tree).unwrap();
+    println!("{:#?}", tree);
 
     println!("===== CODEGEN =====");
     codegen::compile(&tree).unwrap();
