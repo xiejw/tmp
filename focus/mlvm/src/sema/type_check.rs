@@ -61,6 +61,8 @@ impl<'a> VisitorMut<AnalysisResult<TypeResult>> for TypeCheck<'a> {
     fn visit_let_statement(&mut self, s: &mut LetStatement) -> AnalysisResult<TypeResult> {
         let rhs_type = self.visit_expr(&mut s.expr)?;
 
+        // TODO
+
         //let name = &s.ident.name;
         //if self.scope.contains_key(name) {
         //    Err(AnalysisError::new(format!(
@@ -75,6 +77,7 @@ impl<'a> VisitorMut<AnalysisResult<TypeResult>> for TypeCheck<'a> {
     }
 
     fn visit_assign_statement(&mut self, s: &mut AssignStatement) -> AnalysisResult<TypeResult> {
+        // TODO
         // self.visit_expr(&mut s.expr)?;
         // self.visit_ident(&mut s.ident)
         Ok(None)
@@ -98,31 +101,48 @@ impl<'a> VisitorMut<AnalysisResult<TypeResult>> for TypeCheck<'a> {
                 self.any_progress = true;
                 Ok(Some(*tp))
             }
-            (None, Some(tp)) => {
-                i.tp = Some(*tp);
-                self.any_progress = true;
-                Ok(Some(*tp))
-            }
+            (None, Some(tp)) => self.assign_type_to_ident(i, *tp),
         }
     }
 
     fn visit_fn_call(&mut self, f: &mut FnCall) -> AnalysisResult<TypeResult> {
         let fn_sigs = &self.ctx.fn_sigs;
-        match fn_sigs.get(&f.name) {
-            None => Err(error_str(format!("fn {} is not defined", f.name))),
-            _ => unimplemented!(),
+        let sig = fn_sigs.get(&f.name);
+        if let None = sig {
+            return Err(error_str(format!("fn {} is not defined", f.name)));
         }
-        //for arg in f.args.iter_mut().rev() {
-        //    self.visit_expr(arg.borrow_mut())?;
-        //}
-        //if !self.ctx.fn_sigs.contains_key(&f.name) {
-        //    Err(AnalysisError::new(format!(
-        //        "fn_name `{}` has not been defined yet",
-        //        f.name
-        //    )))
-        //} else {
-        //    Ok(())
-        //}
+        let sig = sig.unwrap();
+
+        // handle return type
+        match f.tp {
+            None => {
+                f.tp = Some(sig.ret);
+                self.any_progress = true;
+            }
+            Some(tp_in_f) if tp_in_f != sig.ret => {
+                return Err(error_str(format!(
+                    "fn {} return type mismatch {:?} vs {:?}",
+                    f.name, sig.ret, tp_in_f
+                )));
+            }
+            _ => (),
+        }
+        //match (&f.tp, sig.ret) {
+
+        if f.args.len() != sig.args.len() {
+            return Err(error_str(format!("fn call {} arg count mismatch", f.name)));
+        }
+
+        // pass visit all args first
+        for arg in f.args.iter_mut() {
+            self.assign_type_to_expr(arg, *expected)?;
+        }
+
+        for (expected, arg) in sig.args.iter().zip(f.args.iter_mut()) {
+            self.assign_type_to_expr(arg, *expected)?;
+        }
+
+        Ok(Some(sig.ret))
     }
 
     fn visit_path_lookup(&mut self, p: &mut PathLookup) -> AnalysisResult<TypeResult> {
@@ -139,12 +159,47 @@ impl<'a> VisitorMut<AnalysisResult<TypeResult>> for TypeCheck<'a> {
         }
     }
 }
+impl<'a> TypeCheck<'a> {
+    fn assign_type_to_ident(&mut self, i: &mut Ident, tp: Type) -> AnalysisResult<TypeResult> {
+        i.tp = Some(tp);
+        self.any_progress = true;
+        Ok(Some(tp))
+    }
 
-//fn assign_type_to_expr() {
-//}
-//
-//fn assign_type_to_ident(i: &mut Ident) -> Anan {
-//}
+    fn assign_type_to_fn_call(&mut self, f: &mut FnCall, tp: Type) -> AnalysisResult<()> {
+        let fn_sigs = &self.ctx.fn_sigs;
+        let sig = fn_sigs.get(&f.name);
+        if let None = sig {
+            return Err(error_str(format!("fn {} is not defined", f.name)));
+        }
+        let sig = sig.unwrap();
+
+        // handle return type only
+        match f.tp {
+            None => {
+                f.tp = Some(sig.ret);
+                self.any_progress = true;
+            }
+            Some(tp_in_f) if tp_in_f != sig.ret => {
+                return Err(error_str(format!(
+                    "fn {} return type mismatch {:?} vs {:?}",
+                    f.name, sig.ret, tp_in_f
+                )));
+            }
+            _ => (),
+        }
+    }
+
+    fn assign_type_to_expr(&mut self, e: &mut Expr, tp: Type) -> AnalysisResult<()> {
+        match e {
+            Expr::FnCall(ref mut fn_call) => {self.assign_type_to_fn_call(fn_call, tp)?},
+            Expr::PathLookup(ref mut path) => (),
+            Expr::Ident(ref mut ident) => { self.assign_type_to_ident(ident, tp)?; } ,
+            Expr::Expr(ref mut expr) => {self.assign_type_to_expr(expr, tp)?;},
+        }
+        Ok(())
+    }
+}
 
 use std::error::Error;
 fn error(msg: &str) -> Box<AnalysisError> {
