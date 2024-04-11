@@ -1,7 +1,7 @@
 // Algorithm:
 // - Loop until all types are found for all identities
 // - Crash if the iteration cannot make progress.
-// - Propogate and verify
+// - Propagate and verify
 //
 //   - The fn signature is the anchor point, which can propagate the type to other
 //     identities. The steps are
@@ -64,37 +64,35 @@ impl<'a> Pass<()> for TypeCheck<'a> {
     }
 }
 
-type TypeResult = Option<Type>;
-
-impl<'a> VisitorMut<AnalysisResult<TypeResult>> for TypeCheck<'a> {
-    fn visit_statement(&mut self, s: &mut Statement) -> AnalysisResult<TypeResult> {
+impl<'a> VisitorMut<AnalysisResult<()>> for TypeCheck<'a> {
+    fn visit_statement(&mut self, s: &mut Statement) -> AnalysisResult<()> {
         match s {
             Statement::Let(ref mut let_s) => self.visit_let_statement(let_s),
             Statement::Assign(ref mut assign_s) => self.visit_assign_statement(assign_s),
         }
     }
 
-    fn visit_let_statement(&mut self, s: &mut LetStatement) -> AnalysisResult<TypeResult> {
+    fn visit_let_statement(&mut self, s: &mut LetStatement) -> AnalysisResult<()> {
         self.visit_ident(&mut s.ident)?;
         self.visit_expr(&mut s.expr)?;
         self.propagate_assignment(&mut s.ident, &mut s.expr)
     }
 
-    fn visit_assign_statement(&mut self, s: &mut AssignStatement) -> AnalysisResult<TypeResult> {
+    fn visit_assign_statement(&mut self, s: &mut AssignStatement) -> AnalysisResult<()> {
         self.visit_ident(&mut s.ident)?;
         self.visit_expr(&mut s.expr)?;
         self.propagate_assignment(&mut s.ident, &mut s.expr)
     }
 
-    fn visit_ident(&mut self, i: &mut Ident) -> AnalysisResult<TypeResult> {
+    fn visit_ident(&mut self, i: &mut Ident) -> AnalysisResult<()> {
         match (i.tp, self.scope.get(&i.name)) {
             (None, None) => {
                 self.all_good = false;
-                Ok(None)
+                Ok(())
             }
             (Some(ref ident_tp), Some(recorded_tp)) => {
                 if *ident_tp == *recorded_tp {
-                    Ok(Some(*ident_tp))
+                    Ok(())
                 } else {
                     Err(error(&format!(
                         "mismatch type for {:?} vs {:?}",
@@ -106,7 +104,7 @@ impl<'a> VisitorMut<AnalysisResult<TypeResult>> for TypeCheck<'a> {
                 self.all_good = false;
                 self.any_progress = true;
                 self.scope.insert(i.name.clone(), *tp);
-                Ok(Some(*tp))
+                Ok(())
             }
             (None, Some(tp)) => {
                 self.all_good = false;
@@ -115,12 +113,12 @@ impl<'a> VisitorMut<AnalysisResult<TypeResult>> for TypeCheck<'a> {
                     println!("assign type {:?} to {}", *tp, i.name);
                 }
                 i.tp = Some(*tp);
-                Ok(Some(*tp))
+                Ok(())
             }
         }
     }
 
-    fn visit_fn_call(&mut self, f: &mut FnCall) -> AnalysisResult<TypeResult> {
+    fn visit_fn_call(&mut self, f: &mut FnCall) -> AnalysisResult<()> {
         // Algorithrm
         // - look up fn_sig
         // - check ret type
@@ -161,17 +159,17 @@ impl<'a> VisitorMut<AnalysisResult<TypeResult>> for TypeCheck<'a> {
             self.propagate_type_to_expr(arg, *expected)?;
         }
 
-        Ok(Some(sig.ret))
+        Ok(())
     }
 
-    fn visit_path_lookup(&mut self, p: &mut PathLookup) -> AnalysisResult<TypeResult> {
+    fn visit_path_lookup(&mut self, p: &mut PathLookup) -> AnalysisResult<()> {
         if p.tp.is_none() {
             self.all_good = false;
         }
-        Ok(p.tp)
+        Ok(())
     }
 
-    fn visit_expr(&mut self, e: &mut Expr) -> AnalysisResult<TypeResult> {
+    fn visit_expr(&mut self, e: &mut Expr) -> AnalysisResult<()> {
         match e {
             Expr::FnCall(ref mut fn_call) => self.visit_fn_call(fn_call),
             Expr::PathLookup(ref mut path) => self.visit_path_lookup(path),
@@ -181,7 +179,7 @@ impl<'a> VisitorMut<AnalysisResult<TypeResult>> for TypeCheck<'a> {
     }
 }
 impl<'a> TypeCheck<'a> {
-    fn propagate_type_to_ident(&mut self, i: &mut Ident, tp: Type) -> AnalysisResult<TypeResult> {
+    fn propagate_type_to_ident(&mut self, i: &mut Ident, tp: Type) -> AnalysisResult<()> {
         match i.tp {
             None => {
                 self.all_good = false;
@@ -196,7 +194,7 @@ impl<'a> TypeCheck<'a> {
             }
             _ => (),
         }
-        Ok(Some(tp))
+        Ok(())
     }
 
     fn propagate_type_to_fn_call(&mut self, f: &mut FnCall, tp: Type) -> AnalysisResult<()> {
@@ -246,18 +244,18 @@ impl<'a> TypeCheck<'a> {
         Ok(())
     }
 
-    fn propagate_assignment(&mut self, i: &mut Ident, e: &mut Expr) -> AnalysisResult<TypeResult> {
+    fn propagate_assignment(&mut self, i: &mut Ident, e: &mut Expr) -> AnalysisResult<()> {
         let lhs_type = i.tp;
         let rhs_type = e.get_type();
 
         match (lhs_type, rhs_type) {
             (None, None) => {
                 self.all_good = false;
-                Ok(None)
+                Ok(())
             }
             (Some(lhs_type), Some(rhs_type)) => {
                 if lhs_type == *rhs_type {
-                    Ok(Some(lhs_type))
+                    Ok(())
                 } else {
                     Err(error(&format!(
                         "let statements lhs and rhs type mismatch: {:?} vs {:?}",
@@ -268,12 +266,12 @@ impl<'a> TypeCheck<'a> {
             (None, Some(rhs_type)) => {
                 self.all_good = false;
                 self.propagate_type_to_ident(i, *rhs_type)?;
-                Ok(Some(*rhs_type))
+                Ok(())
             }
             (Some(lhs_type), None) => {
                 self.all_good = false;
                 self.propagate_type_to_expr(e, lhs_type)?;
-                Ok(Some(lhs_type))
+                Ok(())
             }
         }
     }

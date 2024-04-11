@@ -1,10 +1,8 @@
+use crate::parser::Rule;
+use pest::iterators::Pairs;
 use std::error::Error;
 
-use pest::iterators::Pairs;
-
-use crate::parser::Rule;
-
-type AstResult<'a, T> = Result<T, Box<dyn Error>>;
+type AstResult<T> = Result<T, Box<dyn Error>>;
 
 //
 // type
@@ -177,7 +175,7 @@ mod internal {
         })))
     }
 
-    fn process_expr<'a>(pair: Pair<Rule>) -> AstResult<'a, Expr> {
+    fn process_expr(pair: Pair<Rule>) -> AstResult<Expr> {
         debug_assert!(Rule::expr == pair.as_rule());
         let expr = pair.into_inner().next().unwrap();
         match expr.as_rule() {
@@ -189,12 +187,12 @@ mod internal {
         }
     }
 
-    fn process_ident<'a>(pair: Pair<Rule>) -> AstResult<'a, Ident> {
+    fn process_ident(pair: Pair<Rule>) -> AstResult<Ident> {
         debug_assert!(Rule::ident == pair.as_rule());
         Ok(Ident::new(pair.as_str()))
     }
 
-    fn process_fncall<'a>(pair: Pair<Rule>) -> AstResult<'a, FnCall> {
+    fn process_fncall(pair: Pair<Rule>) -> AstResult<FnCall> {
         debug_assert!(Rule::fn_call == pair.as_rule());
 
         let mut pairs = pair.into_inner();
@@ -211,7 +209,7 @@ mod internal {
         Ok(r)
     }
 
-    fn process_path_lookup<'a>(pair: Pair<Rule>) -> AstResult<'a, PathLookup> {
+    fn process_path_lookup(pair: Pair<Rule>) -> AstResult<PathLookup> {
         debug_assert!(Rule::path_lookup == pair.as_rule());
 
         let pairs = pair.into_inner();

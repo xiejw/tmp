@@ -1,8 +1,7 @@
-use std::error::Error;
-
 use crate::ast::{
     AssignStatement, Expr, FnCall, Ident, LetStatement, PathLookup, Statement, Tree, Visitor,
 };
+use std::error::Error;
 
 pub fn compile(ast: &Tree) -> Result<(), Box<dyn Error>> {
     // check type

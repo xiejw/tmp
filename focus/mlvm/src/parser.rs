@@ -1,8 +1,7 @@
-use std::error::Error;
-
 use pest::iterators::Pairs;
 use pest::Parser;
 use pest_derive::Parser;
+use std::error::Error;
 
 type ParseResult<'a> = Result<Pairs<'a, Rule>, Box<dyn Error>>;
 
