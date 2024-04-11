@@ -3,7 +3,9 @@ pub mod codegen;
 pub mod parser;
 pub mod sema;
 
-static SAMPLE: &str = "let a = @weights.b; \n let c = add(a, (a)); let b = c;\n ";
+static SAMPLE: &str = "\
+let a = @weights.b; \n let c = add(a, (a)); let b = c;\n \
+print(b) ; print(a); ";
 
 fn main() {
     println!("===== PROGRAM =====");

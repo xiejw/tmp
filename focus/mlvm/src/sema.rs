@@ -16,6 +16,14 @@ pub fn run(tree: &mut Tree) -> AnalysisResult<()> {
         },
     );
 
+    ctx.fn_sigs.insert(
+        "print".to_string(),
+        FnSig {
+            ret: Type::Tensor,
+            args: vec![Type::Tensor],
+        },
+    );
+
     decl_check::new(&ctx).run(tree)?;
     type_check::new(&ctx).run(tree)?;
     Ok(())

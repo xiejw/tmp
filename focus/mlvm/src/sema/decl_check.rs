@@ -29,6 +29,7 @@ impl<'a> Visitor<AnalysisResult<()>> for DeclCheck<'a> {
         match s {
             Statement::Let(ref let_s) => self.visit_let_statement(let_s.as_ref()),
             Statement::Assign(ref assign_s) => self.visit_assign_statement(assign_s.as_ref()),
+            Statement::Expr(ref e) => self.visit_expr(e),
         }
     }
 

@@ -69,6 +69,7 @@ impl<'a> VisitorMut<AnalysisResult<()>> for TypeCheck<'a> {
         match s {
             Statement::Let(ref mut let_s) => self.visit_let_statement(let_s),
             Statement::Assign(ref mut assign_s) => self.visit_assign_statement(assign_s),
+            Statement::Expr(ref mut e) => self.visit_expr(e),
         }
     }
 

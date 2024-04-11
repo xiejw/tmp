@@ -32,6 +32,7 @@ pub struct Tree {
 pub enum Statement {
     Let(Box<LetStatement>),
     Assign(Box<AssignStatement>),
+    Expr(Box<Expr>),
 }
 
 #[derive(Debug)]
@@ -155,6 +156,7 @@ mod internal {
         Ok(match statement.as_rule() {
             Rule::let_statement => process_let_statement(statement)?,
             Rule::assgin_statement => process_assign_statement(statement)?,
+            Rule::expr => Statement::Expr(Box::new(process_expr(statement)?)),
             _ => unimplemented!(),
         })
     }
