@@ -21,6 +21,8 @@ use crate::ast::{
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
 
+static DEBUG: bool = false;
+
 pub struct TypeCheck<'a> {
     ctx: &'a Context,
     scope: HashMap<String, Type>,
@@ -53,6 +55,9 @@ impl<'a> Pass<()> for TypeCheck<'a> {
 
             if !self.any_progress {
                 // TODO improve the error reporting for the first missing type.
+                if DEBUG {
+                    println!("{:#?}", tree);
+                }
                 break Err(AnalysisError::new("type inf cannot be done".to_string()));
             }
         }
@@ -72,13 +77,13 @@ impl<'a> VisitorMut<AnalysisResult<TypeResult>> for TypeCheck<'a> {
     fn visit_let_statement(&mut self, s: &mut LetStatement) -> AnalysisResult<TypeResult> {
         self.visit_ident(&mut s.ident)?;
         self.visit_expr(&mut s.expr)?;
-        self.propogate_assignment(&mut s.ident, &mut s.expr)
+        self.propagate_assignment(&mut s.ident, &mut s.expr)
     }
 
     fn visit_assign_statement(&mut self, s: &mut AssignStatement) -> AnalysisResult<TypeResult> {
         self.visit_ident(&mut s.ident)?;
         self.visit_expr(&mut s.expr)?;
-        self.propogate_assignment(&mut s.ident, &mut s.expr)
+        self.propagate_assignment(&mut s.ident, &mut s.expr)
     }
 
     fn visit_ident(&mut self, i: &mut Ident) -> AnalysisResult<TypeResult> {
@@ -106,6 +111,9 @@ impl<'a> VisitorMut<AnalysisResult<TypeResult>> for TypeCheck<'a> {
             (None, Some(tp)) => {
                 self.all_good = false;
                 self.any_progress = true;
+                if DEBUG {
+                    println!("assign type {:?} to {}", *tp, i.name);
+                }
                 i.tp = Some(*tp);
                 Ok(Some(*tp))
             }
@@ -119,7 +127,7 @@ impl<'a> VisitorMut<AnalysisResult<TypeResult>> for TypeCheck<'a> {
         // - propagating to all args.
         let fn_sigs = &self.ctx.fn_sigs;
         let sig = fn_sigs.get(&f.name);
-        if let None = sig {
+        if sig.is_none() {
             return Err(error(&format!("fn {} is not defined", f.name)));
         }
         let sig = sig.unwrap();
@@ -157,7 +165,7 @@ impl<'a> VisitorMut<AnalysisResult<TypeResult>> for TypeCheck<'a> {
     }
 
     fn visit_path_lookup(&mut self, p: &mut PathLookup) -> AnalysisResult<TypeResult> {
-        if let None = p.tp {
+        if p.tp.is_none() {
             self.all_good = false;
         }
         Ok(p.tp)
@@ -176,16 +184,16 @@ impl<'a> TypeCheck<'a> {
     fn propagate_type_to_ident(&mut self, i: &mut Ident, tp: Type) -> AnalysisResult<TypeResult> {
         match i.tp {
             None => {
-                self.all_good =  false;
+                self.all_good = false;
                 self.any_progress = true;
-                i.tp = Some(tp);
-            },
+                self.scope.insert(i.name.to_string(), tp);
+            }
             Some(i_tp) if i_tp != tp => {
                 return Err(error(&format!(
                     "ident {} type mismatch {:?} vs {:?}",
                     i.name, tp, i_tp
                 )));
-            },
+            }
             _ => (),
         }
         Ok(Some(tp))
@@ -195,13 +203,31 @@ impl<'a> TypeCheck<'a> {
         match f.tp {
             None => {
                 panic!("should not happen");
-            },
-            Some(f_tp) if f_tp != tp => {
-                return Err(error(&format!(
-                    "fn {} return type mismatch {:?} vs {:?}",
-                    f.name, tp, f_tp
-                )));
-            },
+            }
+            Some(f_tp) if f_tp != tp => Err(error(&format!(
+                "fn {} return type mismatch {:?} vs {:?}",
+                f.name, tp, f_tp
+            ))),
+            _ => Ok(()),
+        }
+    }
+
+    fn propagate_type_to_path_lookup(
+        &mut self,
+        p: &mut PathLookup,
+        tp: Type,
+    ) -> AnalysisResult<()> {
+        match p.tp {
+            None => {
+                self.all_good = false;
+                self.any_progress = true;
+                p.tp = Some(tp);
+                Ok(())
+            }
+            Some(p_tp) if p_tp != tp => Err(error(&format!(
+                "path {:?} type mismatch {:?} vs {:?}",
+                p.paths, tp, p_tp
+            ))),
             _ => Ok(()),
         }
     }
@@ -209,7 +235,7 @@ impl<'a> TypeCheck<'a> {
     fn propagate_type_to_expr(&mut self, e: &mut Expr, tp: Type) -> AnalysisResult<()> {
         match e {
             Expr::FnCall(ref mut fn_call) => self.propagate_type_to_fn_call(fn_call, tp)?,
-            Expr::PathLookup(ref mut path) => (),
+            Expr::PathLookup(ref mut path) => self.propagate_type_to_path_lookup(path, tp)?,
             Expr::Ident(ref mut ident) => {
                 self.propagate_type_to_ident(ident, tp)?;
             }
@@ -220,40 +246,39 @@ impl<'a> TypeCheck<'a> {
         Ok(())
     }
 
-    fn propogate_assignment(&mut self, i: &mut Ident, e: &mut Expr) -> AnalysisResult<TypeResult> {
+    fn propagate_assignment(&mut self, i: &mut Ident, e: &mut Expr) -> AnalysisResult<TypeResult> {
         let lhs_type = i.tp;
         let rhs_type = e.get_type();
 
         match (lhs_type, rhs_type) {
             (None, None) => {
                 self.all_good = false;
-                return Ok(None);
+                Ok(None)
             }
             (Some(lhs_type), Some(rhs_type)) => {
                 if lhs_type == *rhs_type {
-                    return Ok(Some(lhs_type));
+                    Ok(Some(lhs_type))
                 } else {
-                    return Err(error(&format!(
+                    Err(error(&format!(
                         "let statements lhs and rhs type mismatch: {:?} vs {:?}",
                         lhs_type, rhs_type
-                    )));
+                    )))
                 }
             }
             (None, Some(rhs_type)) => {
                 self.all_good = false;
                 self.propagate_type_to_ident(i, *rhs_type)?;
-                return Ok(Some(*rhs_type));
+                Ok(Some(*rhs_type))
             }
             (Some(lhs_type), None) => {
                 self.all_good = false;
                 self.propagate_type_to_expr(e, lhs_type)?;
-                return Ok(Some(lhs_type));
+                Ok(Some(lhs_type))
             }
         }
     }
 }
 
-use std::error::Error;
 fn error(msg: &str) -> Box<AnalysisError> {
     AnalysisError::new(msg.to_string())
 }
