@@ -22,7 +22,26 @@ mod internal {
     pub struct CodeGen {
         id_assignments: HashMap<String, i32>,
         str_assignments: HashMap<String, i32>,
+
         rev_str_assignments: Vec<String>,
+        code_bytes: Vec<CodeBytes>,
+    }
+
+    #[repr(u8)]
+    #[derive(Debug, Clone, Copy)]
+    pub enum Code {
+        Pop = 0, // Pop the stack
+        Tload,   // tensor load
+        Tstor,   // tensor store
+        Pload,   // path load
+        Fcall,
+    }
+
+    #[derive(Clone, Debug)]
+    pub enum CodeBytes {
+        C0(Code),
+        C1T(Code, i32),
+        C1S(Code, i32),
     }
 
     impl CodeGen {
@@ -32,6 +51,9 @@ mod internal {
             }
             for (i, s) in self.rev_str_assignments.iter().enumerate() {
                 println!("=(str)>  {:3}: '{}'", i, s);
+            }
+            for (i, s) in self.code_bytes.iter().enumerate() {
+                println!("=(ins)>  {:3}: {:?}", i, s);
             }
             Ok(())
         }
@@ -94,17 +116,21 @@ mod internal {
         }
     }
 
-    #[repr(u8)]
-    #[derive(Debug)]
-    enum Code {
-        Pop = 0, // Pop the stack
-        Tload,   // tensor load
-        Tstor,   // tensor store
-        Pload,   // path load
-        Fcall,
-    }
-
     impl CodeGen {
+        fn generate_code_for_tensor(&mut self, c: Code, ident: &str) {
+            let id = self.gen_or_assign_id_for_tensor(ident);
+            self.save_code(CodeBytes::C1T(c, id))
+        }
+
+        fn generate_code_for_str(&mut self, c: Code, arg: &str) {
+            let id = self.gen_or_assign_id_for_str(arg);
+            self.save_code(CodeBytes::C1S(c, id))
+        }
+
+        fn generate_code_only(&mut self, c: Code) {
+            self.save_code(CodeBytes::C0(c))
+        }
+
         fn gen_or_assign_id_for_tensor(&mut self, ident: &str) -> i32 {
             let new_id = self.id_assignments.len().try_into().unwrap();
             *self
@@ -125,24 +151,8 @@ mod internal {
             id
         }
 
-        fn generate_code_for_tensor(&mut self, c: Code, ident: &str) {
-            println!(
-                "-> {:6} '{}'",
-                format!("{:?}", c),
-                self.gen_or_assign_id_for_tensor(ident)
-            )
-        }
-
-        fn generate_code_for_str(&mut self, c: Code, arg: &str) {
-            println!(
-                "-> {:6} '{}'",
-                format!("{:?}", c),
-                self.gen_or_assign_id_for_str(arg)
-            )
-        }
-
-        fn generate_code_only(&self, c: Code) {
-            println!("-> {:6}", format!("{:?}", c))
+        fn save_code(&mut self, code_byte: CodeBytes) {
+            self.code_bytes.push(code_byte);
         }
     }
 }
