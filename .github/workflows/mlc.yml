@@ -1,4 +1,4 @@
-name: mlvm
+name: mlc
 run-name: ${{ github.actor }} is running tests for ${{ github.workflow }}
 on: [push]
 jobs:
