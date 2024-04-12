@@ -5,7 +5,7 @@ pub fn compile(ast: &Tree) -> Result<(), Box<dyn Error>> {
     // check type
     // check fn signature
     // check var def
-    let mut codegen = internal::CodeGen {};
+    let mut codegen = internal::CodeGen::default();
     codegen.run(ast)
 }
 
@@ -14,14 +14,24 @@ mod internal {
         AssignStatement, Expr, FnCall, Ident, LetStatement, PathLookup, Statement, Tree, Type,
         Visitor,
     };
+    use std::collections::HashMap;
+    use std::default::Default;
     use std::error::Error;
 
-    pub struct CodeGen {}
+    #[derive(Default)]
+    pub struct CodeGen {
+        id_assignments: HashMap<String, i32>,
+        str_assignments: HashMap<String, i32>,
+        rev_str_assignments: Vec<String>,
+    }
 
     impl CodeGen {
         pub fn run(&mut self, ast: &Tree) -> Result<(), Box<dyn Error>> {
             for s in ast.statements.iter() {
                 self.visit_statement(s);
+            }
+            for (i, s) in self.rev_str_assignments.iter().enumerate() {
+                println!("=(str)>  {:3}: '{}'", i, s);
             }
             Ok(())
         }
@@ -41,13 +51,13 @@ mod internal {
 
         fn visit_let_statement(&mut self, s: &LetStatement) {
             self.visit_expr(&s.expr);
-            self.generate_code(Code::Tstor, &s.ident.name);
+            self.generate_code_for_tensor(Code::Tstor, &s.ident.name);
         }
 
         fn visit_assign_statement(&mut self, s: &AssignStatement) {
             self.visit_expr(&s.expr);
             self.visit_ident(&s.ident);
-            self.generate_code(Code::Tstor, &s.ident.name);
+            self.generate_code_for_tensor(Code::Tstor, &s.ident.name);
         }
 
         fn visit_expr(&mut self, e: &Expr) {
@@ -63,12 +73,12 @@ mod internal {
             for arg in f.args.iter().rev() {
                 self.visit_expr(arg.as_ref());
             }
-            self.generate_code(Code::Fcall, &f.name);
+            self.generate_code_for_str(Code::Fcall, &f.name);
         }
 
         fn visit_ident(&mut self, i: &Ident) {
             match i.tp.unwrap() {
-                Type::Tensor => self.generate_code(Code::Tload, &i.name),
+                Type::Tensor => self.generate_code_for_tensor(Code::Tload, &i.name),
                 Type::Path => panic!("should not reach"),
             }
         }
@@ -80,22 +90,55 @@ mod internal {
                 .map(|x| x.name.clone())
                 .collect::<Vec<_>>()
                 .join("/");
-            self.generate_code(Code::Pload, &path);
+            self.generate_code_for_str(Code::Pload, &path);
         }
     }
 
+    #[repr(u8)]
     #[derive(Debug)]
     enum Code {
-        Tload, // tensor load
-        Tstor, // tensor store
-        Pload, // path load
+        Pop = 0, // Pop the stack
+        Tload,   // tensor load
+        Tstor,   // tensor store
+        Pload,   // path load
         Fcall,
-        Pop, // Pop the stack
     }
 
     impl CodeGen {
-        fn generate_code(&self, c: Code, arg: &str) {
-            println!("-> {:6} '{}'", format!("{:?}", c), arg)
+        fn gen_or_assign_id_for_tensor(&mut self, ident: &str) -> i32 {
+            let new_id = self.id_assignments.len().try_into().unwrap();
+            *self
+                .id_assignments
+                .entry(ident.to_string())
+                .or_insert(new_id)
+        }
+
+        fn gen_or_assign_id_for_str(&mut self, ident: &str) -> i32 {
+            let new_id = self.str_assignments.len().try_into().unwrap();
+            let id = *self
+                .str_assignments
+                .entry(ident.to_string())
+                .or_insert(new_id);
+            if id == self.rev_str_assignments.len().try_into().unwrap() {
+                self.rev_str_assignments.push(ident.to_string());
+            }
+            id
+        }
+
+        fn generate_code_for_tensor(&mut self, c: Code, ident: &str) {
+            println!(
+                "-> {:6} '{}'",
+                format!("{:?}", c),
+                self.gen_or_assign_id_for_tensor(ident)
+            )
+        }
+
+        fn generate_code_for_str(&mut self, c: Code, arg: &str) {
+            println!(
+                "-> {:6} '{}'",
+                format!("{:?}", c),
+                self.gen_or_assign_id_for_str(arg)
+            )
         }
 
         fn generate_code_only(&self, c: Code) {
