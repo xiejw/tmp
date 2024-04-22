@@ -1,7 +1,9 @@
-#include <iostream>
+#include <eve/base/log.h>
 
-int main() {
-  std::cout << "load program\n";
-  std::cout << "run program\n";
-  return 0;
+int
+main( )
+{
+    logInfo( "Load program" );
+    logInfo( "Run  program" );
+    return 0;
 }
