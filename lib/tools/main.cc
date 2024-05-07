@@ -19,21 +19,30 @@
 #include "fs.h"
 
 std::string
-Rename( std::string &Src, int Index )
+Rename( const char *SrcDir, std::string &Src, const char *DstDir, int Index )
 {
-    char        Buf[1000];
+    char SrcBuf[1000], DstBuf[1000];
+
+    snprintf( SrcBuf, 1000 - 1, "%s/%s", SrcDir, Src.c_str( ) );
+
     const char *FileName = Src.c_str( );
     auto        ext      = strrchr( FileName, '.' );
     if ( !ext ) {
-        snprintf( Buf, 1000 - 1, "%010d", Index );
+        snprintf( DstBuf, 1000 - 1, "%s/%010d", DstDir, Index );
     } else {
-        snprintf( Buf, 1000 - 1, "%010d%s", Index, ext );
+        snprintf( DstBuf, 1000 - 1, "%s/%010d%s", DstDir, Index, ext );
     }
-    return Buf;
+
+    if ( -1 == symlink( SrcBuf, DstBuf ) ) {
+        ALERT( "unexpected error: %s\n", strerror( errno ) );
+        ALERT( "%s -> %s\n", SrcBuf, DstBuf );
+        exit( 1 );
+    }
+    return DstBuf;
 }
 
 int
-main( )
+main( int argc, char **argv )
 {
     auto dir = std::unique_ptr<eve::fs::FsDir>{ eve::fs::OpenDir( "." ) };
     if ( dir == nullptr ) {
@@ -59,16 +68,18 @@ main( )
     std::sort( FileNames.begin( ), FileNames.end( ),
                []( auto a, auto b ) { return a.second < b.second; } );
 
-    int Index = 0;
+    int         Index  = argc > 1 ? atoi( argv[1] ) : 0;
+    const char *SrcDir = argc > 2 ? argv[2] : "..";
+    const char *DstDir = argc > 3 ? argv[3] : "Sorted";
+
+    mkdir( DstDir, 0755 );
+
     for ( auto &f : FileNames ) {
         std::string &Src = f.first;
-        std::string  Dst = Rename( f.first, Index++ );
-        INFO( "birthtime: %ld: %s\n", f.second, Src.c_str( ) );
-        INFO( "Rename to %s\n", Dst.c_str( ) );
-        if ( -1 == symlink( Src.c_str( ), Dst.c_str( ) ) ) {
-            ALERT( "unexpected error\n" );
-            exit( 1 );
-        }
+        std::string  Dst = Rename( SrcDir, f.first, DstDir, Index++ );
+
+        INFO( "birthtime: %ld: %s -> %s\n", f.second, Src.c_str( ),
+              Dst.c_str( ) );
     }
 
     return 0;
