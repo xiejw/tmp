@@ -14,7 +14,8 @@
 
 #define INFO( fmt, ... )  printf( "INFO : " fmt __VA_OPT__(, ) __VA_ARGS__ )
 #define DEBUG( fmt, ... ) printf( "DEBUG: " fmt __VA_OPT__(, ) __VA_ARGS__ )
-#define ALERT( fmt, ... ) printf( "ALERT: " fmt __VA_OPT__(, ) __VA_ARGS__ )
+#define ALERT( fmt, ... ) \
+    printf( "ALERT %s:%d: " fmt, __FILE__, __LINE__ __VA_OPT__(, ) __VA_ARGS__ )
 
 #include "fs.h"
 
@@ -61,11 +62,14 @@ main( int argc, char **argv )
     std::vector<std::pair<std::string, time_t>> FileNames{ };
     DirReader->Run( [&]( const char *RegFileName ) {
         struct stat sb;
+        char        buf[100];
         if ( stat( RegFileName, &sb ) == -1 ) {
             ALERT( "failed\n" );
         } else {
             time_t BirthTime = sb.st_birthtime;
-            INFO( "birthtime for %s: %s", RegFileName, ctime( &BirthTime ) );
+            strcpy( buf, ctime( &BirthTime ) );
+            buf[strlen( buf ) - 1] = 0;  // remove the final newline
+            INFO( "birthtime %s: %s\n", buf, RegFileName );
             FileNames.push_back( { RegFileName, BirthTime } );
         }
     } );

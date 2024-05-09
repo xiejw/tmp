@@ -5,6 +5,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+static const bool DEBUG_MODE = true;
+
 namespace eve::fs {
 
 struct FsDir {
@@ -76,11 +78,16 @@ CopyFile( const char *Dst, const char *Src )
     int     saved_errno;
 
     fd_from = open( Src, O_RDONLY );
-    if ( fd_from < 0 ) return false;
+    if ( fd_from < 0 ) {
+        if ( DEBUG_MODE ) ALERT( "failed to open src in CopyFile: %s\n", Src );
+        return false;
+    }
 
-    // To avoid overwrite, O_CREAT is not set
-    fd_to = open( Dst, O_WRONLY | O_EXCL, 0666 );
-    if ( fd_to < 0 ) goto out_error;
+    fd_to = open( Dst, O_WRONLY | O_CREAT | O_EXCL, 0666 );
+    if ( fd_to < 0 ) {
+        if ( DEBUG_MODE ) ALERT( "failed to open dst in CopyFile: %s\n", Dst );
+        goto out_error;
+    }
 
     while ( nread = read( fd_from, buf, sizeof buf ), nread > 0 ) {
         char   *out_ptr = buf;
