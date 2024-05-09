@@ -33,7 +33,7 @@ CopyWithNewName( std::string &Src, const char *DstDir, int Index )
         snprintf( DstBuf, 1000 - 1, "%s/%010d%s", DstDir, Index, ext );
     }
 
-    if ( ! eve::fs::CopyFile( DstBuf, SrcBuf) ) {
+    if ( !eve::fs::CopyFile( DstBuf, SrcBuf ) ) {
         ALERT( "unexpected error: %s\n", strerror( errno ) );
         ALERT( "%s -> %s\n", SrcBuf, DstBuf );
         exit( 1 );
