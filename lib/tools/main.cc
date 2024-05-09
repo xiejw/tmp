@@ -44,15 +44,22 @@ CopyWithNewName( std::string &Src, const char *DstDir, int Index )
 int
 main( int argc, char **argv )
 {
-    auto dir = std::unique_ptr<eve::fs::FsDir>{ eve::fs::OpenDir( "." ) };
-    if ( dir == nullptr ) {
+    int         StartIndex = argc > 1 ? atoi( argv[1] ) : 0;
+    const char *DstDir     = argc > 2 ? argv[2] : "Sorted";
+
+    if ( argc > 3 ) {
+        ALERT( "usage: <prog> <start_index> <dest_dir>\n" );
+        exit( 2 );
+    }
+
+    auto DirReader = std::unique_ptr<eve::fs::FsDir>{ eve::fs::OpenDir( "." ) };
+    if ( DirReader == nullptr ) {
         ALERT( "failed to open dir\n" );
         exit( 1 );
     }
 
     std::vector<std::pair<std::string, time_t>> FileNames{ };
-    int                                         count = 0;
-    dir->Run( [&]( const char *RegFileName ) {
+    DirReader->Run( [&]( const char *RegFileName ) {
         struct stat sb;
         if ( stat( RegFileName, &sb ) == -1 ) {
             ALERT( "failed\n" );
@@ -61,24 +68,21 @@ main( int argc, char **argv )
             INFO( "birthtime for %s: %s", RegFileName, ctime( &BirthTime ) );
             FileNames.push_back( { RegFileName, BirthTime } );
         }
-        count++;
     } );
-    INFO( "total %d files\n", count );
+    INFO( "total %zu files\n", FileNames.size( ) );
 
     std::sort( FileNames.begin( ), FileNames.end( ),
                []( auto a, auto b ) { return a.second < b.second; } );
 
-    int         Index  = argc > 1 ? atoi( argv[1] ) : 0;
-    const char *DstDir = argc > 2 ? argv[2] : "Sorted";
-
     mkdir( DstDir, 0755 );
 
-    for ( auto &f : FileNames ) {
-        std::string &Src = f.first;
-        std::string  Dst = CopyWithNewName( f.first, DstDir, Index++ );
+    for ( auto &NameAndTime : FileNames ) {
+        std::string &Src = NameAndTime.first;
+        std::string  Dst =
+            CopyWithNewName( NameAndTime.first, DstDir, StartIndex++ );
 
-        INFO( "birthtime: %ld: %s -> %s\n", f.second, Src.c_str( ),
-              Dst.c_str( ) );
+        INFO( "birthtime: %ld: %s <- %s\n", NameAndTime.second, Dst.c_str( ),
+              Src.c_str( ) );
     }
 
     return 0;

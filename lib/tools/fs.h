@@ -66,19 +66,20 @@ OpenDir( const char *dir )
     return new FsDir( /*name=*/dir, OsDir );
 }
 
+// Return false if error
 bool
-CopyFile( const char *to, const char *from )
+CopyFile( const char *Dst, const char *Src )
 {
     int     fd_to, fd_from;
     char    buf[4096];
     ssize_t nread;
     int     saved_errno;
 
-    fd_from = open( from, O_RDONLY );
+    fd_from = open( Src, O_RDONLY );
     if ( fd_from < 0 ) return false;
 
     // To avoid overwrite, O_CREAT is not set
-    fd_to = open( to, O_WRONLY | O_EXCL, 0666 );
+    fd_to = open( Dst, O_WRONLY | O_EXCL, 0666 );
     if ( fd_to < 0 ) goto out_error;
 
     while ( nread = read( fd_from, buf, sizeof buf ), nread > 0 ) {
