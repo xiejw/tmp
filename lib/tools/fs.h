@@ -77,7 +77,8 @@ CopyFile( const char *to, const char *from )
     fd_from = open( from, O_RDONLY );
     if ( fd_from < 0 ) return false;
 
-    fd_to = open( to, O_WRONLY | O_CREAT | O_EXCL, 0666 );
+    // To avoid overwrite, O_CREAT is not set
+    fd_to = open( to, O_WRONLY | O_EXCL, 0666 );
     if ( fd_to < 0 ) goto out_error;
 
     while ( nread = read( fd_from, buf, sizeof buf ), nread > 0 ) {
