@@ -19,11 +19,11 @@
 #include "fs.h"
 
 std::string
-Rename( const char *SrcDir, std::string &Src, const char *DstDir, int Index )
+CopyWithNewName( std::string &Src, const char *DstDir, int Index )
 {
     char SrcBuf[1000], DstBuf[1000];
 
-    snprintf( SrcBuf, 1000 - 1, "%s/%s", SrcDir, Src.c_str( ) );
+    snprintf( SrcBuf, 1000 - 1, "%s", Src.c_str( ) );
 
     const char *FileName = Src.c_str( );
     auto        ext      = strrchr( FileName, '.' );
@@ -33,7 +33,7 @@ Rename( const char *SrcDir, std::string &Src, const char *DstDir, int Index )
         snprintf( DstBuf, 1000 - 1, "%s/%010d%s", DstDir, Index, ext );
     }
 
-    if ( -1 == symlink( SrcBuf, DstBuf ) ) {
+    if ( ! eve::fs::CopyFile( DstBuf, SrcBuf) ) {
         ALERT( "unexpected error: %s\n", strerror( errno ) );
         ALERT( "%s -> %s\n", SrcBuf, DstBuf );
         exit( 1 );
@@ -69,14 +69,13 @@ main( int argc, char **argv )
                []( auto a, auto b ) { return a.second < b.second; } );
 
     int         Index  = argc > 1 ? atoi( argv[1] ) : 0;
-    const char *SrcDir = argc > 2 ? argv[2] : "..";
-    const char *DstDir = argc > 3 ? argv[3] : "Sorted";
+    const char *DstDir = argc > 2 ? argv[2] : "Sorted";
 
     mkdir( DstDir, 0755 );
 
     for ( auto &f : FileNames ) {
         std::string &Src = f.first;
-        std::string  Dst = Rename( SrcDir, f.first, DstDir, Index++ );
+        std::string  Dst = CopyWithNewName( f.first, DstDir, Index++ );
 
         INFO( "birthtime: %ld: %s -> %s\n", f.second, Src.c_str( ),
               Dst.c_str( ) );
