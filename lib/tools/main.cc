@@ -14,16 +14,17 @@
 
 #define INFO( fmt, ... )  printf( "INFO : " fmt __VA_OPT__(, ) __VA_ARGS__ )
 #define DEBUG( fmt, ... ) printf( "DEBUG: " fmt __VA_OPT__(, ) __VA_ARGS__ )
-#define ALERT( fmt, ... ) printf( "ALERT: " fmt __VA_OPT__(, ) __VA_ARGS__ )
+#define ALERT( fmt, ... ) \
+    printf( "ALERT %s:%d: " fmt, __FILE__, __LINE__ __VA_OPT__(, ) __VA_ARGS__ )
 
 #include "fs.h"
 
 std::string
-Rename( const char *SrcDir, std::string &Src, const char *DstDir, int Index )
+CopyWithNewName( std::string &Src, const char *DstDir, int Index )
 {
     char SrcBuf[1000], DstBuf[1000];
 
-    snprintf( SrcBuf, 1000 - 1, "%s/%s", SrcDir, Src.c_str( ) );
+    snprintf( SrcBuf, 1000 - 1, "%s", Src.c_str( ) );
 
     const char *FileName = Src.c_str( );
     auto        ext      = strrchr( FileName, '.' );
@@ -33,7 +34,7 @@ Rename( const char *SrcDir, std::string &Src, const char *DstDir, int Index )
         snprintf( DstBuf, 1000 - 1, "%s/%010d%s", DstDir, Index, ext );
     }
 
-    if ( -1 == symlink( SrcBuf, DstBuf ) ) {
+    if ( !eve::fs::CopyFile( DstBuf, SrcBuf ) ) {
         ALERT( "unexpected error: %s\n", strerror( errno ) );
         ALERT( "%s -> %s\n", SrcBuf, DstBuf );
         exit( 1 );
@@ -44,42 +45,48 @@ Rename( const char *SrcDir, std::string &Src, const char *DstDir, int Index )
 int
 main( int argc, char **argv )
 {
-    auto dir = std::unique_ptr<eve::fs::FsDir>{ eve::fs::OpenDir( "." ) };
-    if ( dir == nullptr ) {
+    int         StartIndex = argc > 1 ? atoi( argv[1] ) : 0;
+    const char *DstDir     = argc > 2 ? argv[2] : "Sorted";
+
+    if ( argc > 3 ) {
+        ALERT( "usage: <prog> <start_index> <dest_dir>\n" );
+        exit( 2 );
+    }
+
+    auto DirReader = std::unique_ptr<eve::fs::FsDir>{ eve::fs::OpenDir( "." ) };
+    if ( DirReader == nullptr ) {
         ALERT( "failed to open dir\n" );
         exit( 1 );
     }
 
     std::vector<std::pair<std::string, time_t>> FileNames{ };
-    int                                         count = 0;
-    dir->Run( [&]( const char *RegFileName ) {
+    DirReader->Run( [&]( const char *RegFileName ) {
         struct stat sb;
+        char        buf[100];
         if ( stat( RegFileName, &sb ) == -1 ) {
             ALERT( "failed\n" );
         } else {
             time_t BirthTime = sb.st_birthtime;
-            INFO( "birthtime for %s: %s", RegFileName, ctime( &BirthTime ) );
+            strcpy( buf, ctime( &BirthTime ) );
+            buf[strlen( buf ) - 1] = 0;  // remove the final newline
+            INFO( "birthtime %s: %s\n", buf, RegFileName );
             FileNames.push_back( { RegFileName, BirthTime } );
         }
-        count++;
     } );
-    INFO( "total %d files\n", count );
+    INFO( "total %zu files\n", FileNames.size( ) );
 
     std::sort( FileNames.begin( ), FileNames.end( ),
                []( auto a, auto b ) { return a.second < b.second; } );
 
-    int         Index  = argc > 1 ? atoi( argv[1] ) : 0;
-    const char *SrcDir = argc > 2 ? argv[2] : "..";
-    const char *DstDir = argc > 3 ? argv[3] : "Sorted";
-
     mkdir( DstDir, 0755 );
 
-    for ( auto &f : FileNames ) {
-        std::string &Src = f.first;
-        std::string  Dst = Rename( SrcDir, f.first, DstDir, Index++ );
+    for ( auto &NameAndTime : FileNames ) {
+        std::string &Src = NameAndTime.first;
+        std::string  Dst =
+            CopyWithNewName( NameAndTime.first, DstDir, StartIndex++ );
 
-        INFO( "birthtime: %ld: %s -> %s\n", f.second, Src.c_str( ),
-              Dst.c_str( ) );
+        INFO( "birthtime: %ld: %s <- %s\n", NameAndTime.second, Dst.c_str( ),
+              Src.c_str( ) );
     }
 
     return 0;
