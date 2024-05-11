@@ -18,6 +18,7 @@ LDFLAGS       += ${FLTK_LDFLAGS}
 # app
 #
 BIN            = ${BUILD}/gallery
+OBJS          += ${BUILD}/gallery_app.o
 OBJS          += ${BUILD}/gallery_store.o
 OBJS          += ${BUILD}/eve_fs.o
 
@@ -30,7 +31,10 @@ run: compile
 	${BIN}
 
 ${BIN}: cmd/main.cc ${OBJS} | ${BUILD}
-	clang++ ${CXXFLAGS} ${FLTK_CXXFLAGS} ${LDFLAGS} ${OBJS} -o $@ $<
+	clang++ ${CXXFLAGS} ${LDFLAGS} ${OBJS} -o $@ $<
+
+${BUILD}/gallery_app.o: src/gallery/app.cc | ${BUILD}
+	clang++ ${CXXFLAGS} ${FLTK_CXXFLAGS} -o $@ -c $<
 
 ${BUILD}/gallery_store.o: src/gallery/store.cc | ${BUILD}
 	clang++ ${CXXFLAGS} -o $@ -c $<
