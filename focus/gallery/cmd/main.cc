@@ -6,6 +6,7 @@
 #include <FL/names.h>
 
 #include <eve/fs.h>
+#include <gallery/store.h>
 
 class MyClass : public Fl_Box {
   public:
@@ -59,12 +60,20 @@ class MyClass : public Fl_Box {
 int
 main( )
 {
+    gallery::Store Store{ "/opt/photos" };
+    auto           PhotoPathOpt = Store.Last( );
+    if ( !PhotoPathOpt ) {
+        PANIC( "no last photo found" );
+    }
+    INFO( "Open File with: %s", PhotoPathOpt.value( ).c_str( ) );
+
     fl_register_images( );
     Fl_Window win( 720, 486 );
     MyClass   box( 10, 10, 720 - 20, 486 - 20 );
     // Fl_JPEG_Image  png("test.jpg");
     // Fl_Shared_Image *img  = &png;
-    Fl_Shared_Image *img = Fl_Shared_Image::get( "test.jpg" );
+    Fl_Shared_Image *img =
+        Fl_Shared_Image::get( PhotoPathOpt.value( ).c_str( ) );
 
     if ( img->w( ) > box.w( ) || img->h( ) > box.h( ) ) {
         Fl_Image *temp;

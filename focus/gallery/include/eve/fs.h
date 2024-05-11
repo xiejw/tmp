@@ -1,6 +1,8 @@
 // vim: ft=cpp
 #pragma once
 
+#include <functional>
+#include <memory>
 #include <string>
 
 #include <dirent.h>
@@ -22,19 +24,19 @@ struct FsDir {
   public:
     FsDir( std::string DirName, DIR *Dir ) : DirName( DirName ), Dir( Dir )
     {
-        DEBUG( "opening dir: %s\n", this->DirName.c_str( ) );
+        DEBUG( "opening dir: %s", this->DirName.c_str( ) );
     };
 
     ~FsDir( )
     {
         if ( Dir != nullptr ) {
             closedir( Dir );
-            DEBUG( "closing dir: %s\n", this->DirName.c_str( ) );
+            DEBUG( "closing dir: %s", this->DirName.c_str( ) );
         }
     }
 
     // The name lifetime is limited to the invocation.
-    void Run( const std::function<void( const char *RegFileName )> Fn )
+    void Run( const std::function<void( const char *Name, bool IsFile )> Fn )
     {
         struct dirent *dp;
         for ( ;; ) {
@@ -52,7 +54,11 @@ struct FsDir {
             }
 
             if ( dp->d_type == DT_REG ) {
-                Fn( dp->d_name );
+                Fn( dp->d_name, true );
+            }
+
+            if ( dp->d_type == DT_DIR ) {
+                Fn( dp->d_name, false );
             }
         }
 
@@ -63,13 +69,5 @@ struct FsDir {
 };
 
 // Return nullptr if error.
-FsDir *
-OpenDir( const char *dir )
-{
-    DIR *OsDir = opendir( dir );
-    if ( dir == nullptr ) {
-        return nullptr;
-    }
-    return new FsDir( /*name=*/dir, OsDir );
-}
+std::unique_ptr<FsDir> OpenDir( const char *dir );
 }  // namespace eve::fs
