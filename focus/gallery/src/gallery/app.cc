@@ -73,7 +73,7 @@ App::Run( )
 int
 App::RunFltk( )
 {
-    auto PhotoPathOpt = Store.Last( );
+    auto PhotoPathOpt = Store.getLast( );
     if ( !PhotoPathOpt ) {
         panic( "no last photo found" );
     }
