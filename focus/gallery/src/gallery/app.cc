@@ -7,7 +7,8 @@
 #include <FL/Fl_Window.H>
 #include <FL/names.h>
 
-#include <eve/base.h>
+#include <eve/base/error.h>
+#include <eve/base/log.h>
 
 namespace {
 class MyClass : public Fl_Box {
@@ -74,9 +75,9 @@ App::RunFltk( )
 {
     auto PhotoPathOpt = Store.Last( );
     if ( !PhotoPathOpt ) {
-        PANIC( "no last photo found" );
+        panic( "no last photo found" );
     }
-    INFO( "Open File with: %s", PhotoPathOpt.value( ).c_str( ) );
+    logInfo( "Open File with: %s", PhotoPathOpt.value( ).c_str( ) );
 
     fl_register_images( );
     Fl_Window        win( 720, 486 );
