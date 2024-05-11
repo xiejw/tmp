@@ -5,6 +5,8 @@
 #include <FL/Fl_Window.H>
 #include <FL/names.h>
 
+#include <eve/fs.h>
+
 class MyClass : public Fl_Box {
   public:
     MyClass( int x, int y, int w, int h ) : Fl_Box( x, y, w, h ) {}
@@ -78,4 +80,3 @@ main( )
     win.show( );
     return ( Fl::run( ) );
 }
-
