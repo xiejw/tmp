@@ -11,55 +11,67 @@
 #include <eve/base/log.h>
 
 namespace {
+using gallery::Store;
 class MyClass : public Fl_Box {
+  private:
+    Store &Store;
+
   public:
-    MyClass( int x, int y, int w, int h ) : Fl_Box( x, y, w, h ) {}
+    MyClass( struct Store &Store, int x, int y, int w, int h )
+        : Fl_Box( x, y, w, h ), Store( Store )
+    {
+    }
+
+  private:
+    Fl_Image *loadImage( const char *path )
+    {
+        Fl_Shared_Image *img = Fl_Shared_Image::get( path );
+
+        int w  = img->w( );
+        int h  = img->h( );
+        int bw = this->w( );
+        int bh = this->h( );
+
+        if ( w > bw || h > bh ) {
+            // Fl_Image *temp;
+            if ( w > bw ) {
+                h = int( h * 1.0 / w * bw );
+                w = bw;
+            }
+            if ( h > bh ) {
+                w = int( w * 1.0 / h * bh );
+                h = bh;
+            }
+            img->scale( w, h, 1 );
+            // temp = img->copy( w, h );
+            // img->release( );
+            // img = (Fl_Shared_Image *)temp;
+        }
+        return img;
+    }
+
+  public:
     int handle( int e )
     {
         if ( Fl::event_key( ) == FL_Escape ) {
-            ( (Fl_Shared_Image *)this->image( ) )->release( );
-            fprintf( stderr, "escape: %d", e );
+            logInfo( "deteced escape key. quit" );
             return 0;
         }
 
         if ( e == FL_KEYDOWN && Fl::event_key( ) == FL_Up ) {
-            printf( "up\n" );
-            Fl_Shared_Image *img = Fl_Shared_Image::get( "test1.jpg" );
-
-            if ( img->w( ) > this->w( ) || img->h( ) > this->h( ) ) {
-                Fl_Image *temp;
-                if ( img->w( ) > img->h( ) ) {
-                    temp = img->copy( this->w( ),
-                                      this->h( ) * img->h( ) / img->w( ) );
-                } else {
-                    temp = img->copy( this->w( ) * img->w( ) / img->h( ),
-                                      this->h( ) );
-                }
-                img->release( );
-                img = (Fl_Shared_Image *)temp;
+            std::optional<std::string> PrevImage = Store.getPrev( );
+            if ( !PrevImage )
+                logInfo( "No more prev image" );
+            else {
+                auto *path = PrevImage.value( ).c_str( );
+                logInfo( "Load prev image: %s", path );
+                ( (Fl_Shared_Image *)this->image( ) )->release( );
+                this->image( loadImage( path ) );
+                this->parent( )->redraw( );
             }
-            ( (Fl_Shared_Image *)this->image( ) )->release( );
-            this->image( *img );
-            this->redraw( );
         }
         return 1;
     }
-    //         fprintf(stderr, "EVENT: %s(%d)\n", fl_eventnames[e], e);
-    //         if (e==FL_KEYDOWN) {
-    //         fprintf(stderr, "Key: %s(%d)\n", Fl::event_text() ,
-    //         Fl::event_key());
-    //         }
-    //         	if (e == FL_KEYDOWN && Fl::event_key() == FL_Escape) {
-    //            fprintf(stderr, "escape");
-    //            return 0;
-    //          }
-    //         	if (e == FL_KEYUP && Fl::event_key() == FL_Escape) {
-    //            fprintf(stderr, "escape_up");
-    //            return 0;
-    //          }
-
-    //         return 1;
-    //}
 };
 }  // namespace
 
@@ -81,7 +93,7 @@ App::RunFltk( )
 
     fl_register_images( );
     Fl_Window        win( 720, 486 );
-    MyClass          box( 10, 10, 720 - 20, 486 - 20 );
+    MyClass          box( Store, 10, 10, 720 - 20, 486 - 20 );
     Fl_Shared_Image *img =
         Fl_Shared_Image::get( PhotoPathOpt.value( ).c_str( ) );
 
@@ -96,6 +108,8 @@ App::RunFltk( )
         img = (Fl_Shared_Image *)temp;
     }
     box.image( *img );
+    box.align( FL_ALIGN_INSIDE | FL_ALIGN_CENTER | FL_ALIGN_CLIP );
+    win.resizable( &win );
     win.show( );
     return Fl::run( );
 }

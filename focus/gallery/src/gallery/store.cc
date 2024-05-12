@@ -11,6 +11,8 @@ namespace gallery {
 Error
 DirEntry::expand( )
 {
+    if ( Expanded ) return { };
+
     auto DirReader = eve::fs::OpenDir( Path.c_str( ) );
 
     if ( !DirReader.isOk( ) ) {
@@ -39,6 +41,7 @@ DirEntry::expand( )
 std::optional<std::string>
 DirEntry::getLast( )
 {
+    expand( ).unwrap( );
     if ( !Files.empty( ) ) {
         Pointer = -1 * Files.size( );
         return Path + "/" + Files.back( );
@@ -50,8 +53,7 @@ DirEntry::getLast( )
 
     for ( std::ptrdiff_t i = Dirs.size( ) - 1; i >= 0; i-- ) {
         auto &Dir = Dirs[i];
-        if ( !Dir.Expanded ) Dir.expand( ).unwrap( );
-        auto r = Dir.getLast( );
+        auto  r   = Dir.getLast( );
         if ( r ) {
             Pointer = i + 1;
             return r;
@@ -62,12 +64,74 @@ DirEntry::getLast( )
 }
 
 std::optional<std::string>
-Store::getLast( ) noexcept
+DirEntry::getPrev( )
+{
+    expand( ).unwrap( );
+    if ( Pointer == 0 ) return getLast( );
+
+    if ( Pointer < -1 ) {
+        Pointer++;
+        return Path + "/" + Files[-1 * Pointer - 1];
+    }
+
+    if ( Dirs.empty( ) ) {
+        return { };
+    }
+
+    if ( Pointer == -1 ) {
+        // Scan all dirs
+        for ( int i = Dirs.size( ) - 1; i >= 0; i-- ) {
+            auto &Dir    = Dirs[i];
+            auto  Result = Dir.getLast( );
+            if ( Result ) {
+                Pointer = i + 1;
+                return Result;
+            }
+        }
+        return { };
+    }
+
+    int  DirIndex = Pointer - 1;
+    auto Result   = Dirs[DirIndex].getPrev( );
+
+    if ( Result ) {
+        return Result;
+    }
+
+    // Scan remaining dirs
+    for ( int i = DirIndex - 1; i >= 0; i-- ) {
+        auto &Dir    = Dirs[i];
+        auto  Result = Dir.getLast( );
+        if ( Result ) {
+            Pointer = i + 1;
+            return Result;
+        }
+    }
+
+    return { };
+}
+
+Error
+Store::init( ) noexcept
 {
     if ( Root == nullptr ) {
         Root = std::make_unique<DirEntry>( BaseDir );
-        Root->expand( ).unwrap( );
+        return { };
     }
+    return { };
+}
+
+std::optional<std::string>
+Store::getLast( ) noexcept
+{
+    init( ).unwrap( );
     return Root->getLast( );
+}
+
+std::optional<std::string>
+Store::getPrev( ) noexcept
+{
+    init( ).unwrap( );
+    return Root->getPrev( );
 }
 }  // namespace gallery

@@ -13,12 +13,15 @@ namespace gallery {
 struct DirEntry {
     std::string              Path{ };
     bool                     Expanded = false;
-    bool                     Pointer  = 0;  // Positive is Dirs
+    int                      Pointer  = 0;  // Positive is Dirs
     std::vector<DirEntry>    Dirs{ };
     std::vector<std::string> Files{ };
 
-    eve::base::Error           expand( );
     std::optional<std::string> getLast( );
+    std::optional<std::string> getPrev( );
+
+  private:
+    eve::base::Error expand( );
 };
 
 struct Store {
@@ -30,6 +33,10 @@ struct Store {
     Store( std::string_view BaseDir ) : BaseDir( BaseDir ) {};
 
   public:
+    std::optional<std::string> getPrev( ) noexcept;
     std::optional<std::string> getLast( ) noexcept;
+
+  private:
+    eve::base::Error init( ) noexcept;
 };
 }  // namespace gallery
