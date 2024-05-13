@@ -1,3 +1,29 @@
+// This utility finds all photos in the current folder ("."), and sorts them by
+// birthtime (only available in macOS, not Linux).
+//
+// After that, it copies the file to the destination folder with a new name
+// containing the index counter. The extention of the file is kept. The start
+// index counter is 0 but can be supplied by the argument of the cmd.
+//
+// Usage: <prog> <start_index> <dest_dir>
+//
+// For example, assume we have the following three files in current folder:
+//
+//   name   birthtime
+//   a.jpg  3
+//   b.mp4  2
+//   c      1
+//
+//  The cmd runs with
+//
+//    <prog> 4 ../sorted
+//
+//  will result to new copies like
+//
+//    ../sorted/0000000004      -> c     (youngest first)
+//    ../sorted/0000000005.mp4  -> b.mp4
+//    ../sorted/0000000006.jpg  -> a.jpg
+//
 #include <cstdio>
 #include <functional>
 #include <memory>
