@@ -1,0 +1,15 @@
+{
+  "source": "src/index.html",
+  "devDependencies": {
+    "parcel": "^2.12.0",
+    "process": "^0.11.10"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "scripts": {
+    "start": "npx parcel --open --no-cache --dist-dir=.build",
+    "build": "npx parcel build --dist-dir=.build_release"
+  }
+}
