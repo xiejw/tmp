@@ -1,0 +1,2 @@
+compile:
+	nvcc main.cu
