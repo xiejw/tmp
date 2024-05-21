@@ -1,0 +1,8 @@
+[package]
+name = "tokio_pg"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.37.0", features = ["full"] }
+tokio-postgres = "0.7.10"
