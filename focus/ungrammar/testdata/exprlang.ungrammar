@@ -1,0 +1,21 @@
+// Ungrammar for a simple expression language
+
+Program = Stmt*
+
+Stmt = AssignStmt | Expr
+
+AssignStmt = 'set' 'ident' '=' Expr
+
+Expr =
+    Literal
+  | UnaryExpr
+  | ParenExpr
+  | BinExpr
+
+UnaryExpr = op:('+' | '-') Expr
+
+ParenExpr = '(' Expr ')'
+
+BinExpr = lhs:Expr op:('+' | '-' | '*' | '/' | '%') rhs:Expr
+
+Literal = 'int_literal' | 'ident'
