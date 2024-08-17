@@ -1,0 +1,28 @@
+Func = Layer*
+
+Layer = Input
+      | Dense
+      | Output
+
+Dense  = name: str
+         x   : Tensor
+         y   : Tensor
+         w   : Tensor
+         b   : Tensor?
+         act : ActFn?
+Input  = y   : Tensor*
+Output = x   : Tensor*
+
+ActFn = Relu
+      | Silu
+
+Tensor = name: str
+         sp  : Shape
+         kind: TensorKind
+
+Shape  = dim : int*
+         rank: int
+
+TensorKind = Global
+           | InOut
+           | Tmp
