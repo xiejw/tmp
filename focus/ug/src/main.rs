@@ -1,7 +1,8 @@
+mod cc;
+
+use crate::cc::Compiler;
+
 fn main() {
     let s = "Hello, 世界!";
-
-    for c in s.chars() {
-        println!("{c}");
-    }
+    cc::new_compiler().compile(s).unwrap();
 }
