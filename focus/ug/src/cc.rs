@@ -23,7 +23,19 @@ mod trivial {
     impl Compiler for TrivialCompiler {
         fn compile(&mut self, program: &str) -> Result<(), Error> {
             for c in program.chars() {
-                println!("{c}");
+                println!(
+                    "{:width$} a /{:5}/ d /{:5}/ s /{:5}/",
+                    if c.is_whitespace() { ' ' } else { c },
+                    c.is_ascii_alphabetic(),
+                    c.is_ascii_digit(),
+                    c.is_whitespace(),
+                    width = match c.len_utf8() {
+                        1 => 2,
+                        2 | 3 => 1,
+                        0 => 2,
+                        _ => panic!(),
+                    }
+                );
             }
             return Ok(());
         }
