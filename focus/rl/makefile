@@ -2,8 +2,7 @@ CMD              =  cmd
 SRC              =  src
 INC              =  include
 
-#EVE_FMT_FOLDERS  = ${CMD} ${SRC} ${INC}
-EVE_FMT_FOLDERS  = ${CMD}
+EVE_FMT_FOLDERS  = ${CMD} ${SRC} ${INC}
 EVE_PATH         = ../../../y/ann/eve
 include ${EVE_PATH}/eve.mk
 
@@ -16,7 +15,7 @@ DEPS            += ${BUILD} ${BUILD_OBJ} ${EVE_LIB}
 # ------------------------------------------------------------------------------
 # Libs
 #
-#MODULES          = ${BUILD_OBJ}/algos_dal.o
+MODULES          = ${BUILD_OBJ}/env.o
 
 # ------------------------------------------------------------------------------
 # Actions
@@ -39,8 +38,8 @@ test: compile run
 # ------------------------------------------------------------------------------
 # Rules for sub-modules
 #
-#${BUILD_OBJ}/algos_%.o: ${SRC}/algos/%.cc ${INC}/algos/*.h | ${DEPS}
-#	${CXX} -o $@ ${CXXFLAGS} -c $<
+${BUILD_OBJ}/%.o: ${SRC}/%.cc ${INC}/*.h | ${DEPS}
+	${CXX} -o $@ ${CXXFLAGS} -c $<
 
 # ------------------------------------------------------------------------------
 # Cmds
