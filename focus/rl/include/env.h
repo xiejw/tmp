@@ -2,10 +2,13 @@
 #pragma once
 
 #include <cassert>
+#include <memory>
 #include <print>
 #include <span>
 #include <string_view>
 #include <vector>
+
+#include "base.h"
 
 namespace env {
 enum class Direction {
@@ -22,10 +25,18 @@ struct Env {
     std::size_t                 y{ };
 
   public:
+    struct Result {
+        f32_t       Reward;
+        bool        End;
+        std::size_t StateX;
+        std::size_t StateY;
+    };
+
+  public:
     Env( std::span<std::string_view> maze ) : maze( maze ) { check( ); };
 
     auto render( ) const -> void;
-    auto step( Direction Dir ) -> bool;
+    auto step( Direction Dir ) -> std::unique_ptr<Result>;
 
     auto getLegalActionMasks( ) const -> std::vector<int>;
 

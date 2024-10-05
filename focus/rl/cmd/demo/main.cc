@@ -27,7 +27,8 @@ main( )
         auto ActionToTake =
             env::sampleLegalActions<env::Direction>( ActionMasks );
         std::print( "Action To Take: {}\n", ActionToTake );
-        if ( Env.step( ActionToTake ) ) break;
+        auto Result = Env.step( ActionToTake );
+        if ( Result->End ) break;
     }
     return 0;
 }

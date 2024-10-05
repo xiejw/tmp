@@ -36,7 +36,7 @@ Env::render( ) const -> void
 }
 
 auto
-Env::step( Direction Dir ) -> bool
+Env::step( Direction Dir ) -> std::unique_ptr<Result>
 {
     switch ( Dir ) {
     case env::Direction::Up:
@@ -55,7 +55,11 @@ Env::step( Direction Dir ) -> bool
 
     this->check( );
 
-    return maze[x][y] == 'g';
+    return std::make_unique<Result>(
+        /*Reward = */ -1,
+        /*End    = */ maze[x][y] == 'g',
+        /*StartX = */ x,
+        /*StartY = */ y );
 }
 
 auto
