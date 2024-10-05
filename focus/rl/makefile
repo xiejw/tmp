@@ -49,5 +49,5 @@ compile: ${BUILD}/demo_main
 ${BUILD}/demo_main: ${BUILD}/demo_main.o ${MODULES} | ${DEPS}
 	${CXX} -o $@ $^ ${LDFLAGS}
 
-${BUILD}/%_main.o: cmd/%/main.cc | ${DEPS}
-	${CXX} ${CXXFLAGS} -o $@ -c $^
+${BUILD}/%_main.o: cmd/%/main.cc ${INC}/*.h | ${DEPS}
+	${CXX} ${CXXFLAGS} -o $@ -c $<

@@ -24,35 +24,45 @@ struct Env {
   public:
     Env( std::span<std::string_view> maze ) : maze( maze ) { check( ); };
 
-    auto check( ) -> void;
-    auto render( ) -> void;
+    auto render( ) const -> void;
     auto step( Direction Dir ) -> bool;
-    auto getLegalActions( ) -> std::vector<Direction>;
+
+    auto getLegalActionMasks( ) const -> std::vector<int>;
+
+  private:
+    auto check( ) -> void;
 };
 
 template <class T>
 auto
-printLegalActions( const std::vector<T> &Actions )
+printLegalActions( const std::vector<int> &ActionMasks )
 {
     std::print( "Legal Actions: [" );
-    for ( auto &Action : Actions ) {
-        std::print( "{}, ", Action );
+    for ( std::size_t i = 0; i < ActionMasks.size( ); i++ ) {
+        if ( ActionMasks[i] == 1 ) std::print( "{}, ", static_cast<T>( i ) );
     }
     std::print( "]\n" );
 }
 
 template <class T>
 auto
-sampleLegalActions( const std::vector<T> &Actions ) -> T
+sampleLegalActions( const std::vector<int> &ActionMasks ) -> T
 {
-    std::size_t Size = Actions.size( );
+    std::size_t Size = ActionMasks.size( );
     assert( Size > 0 );
-    std::size_t SampleIndex = std::size_t( rand( ) ) % Size;
-    return Actions[SampleIndex];
+    for ( ;; ) {
+        std::size_t SampleIndex = std::size_t( rand( ) ) % Size;
+        if ( ActionMasks[SampleIndex] == 1 ) {
+            return static_cast<T>( SampleIndex );
+        }
+    }
 }
 
 }  // namespace env
 
+// -----------------------------------------------------------------------------
+// Formatter for Direction
+//
 namespace std {
 template <>
 struct formatter<env::Direction, char> {
@@ -63,16 +73,9 @@ struct formatter<env::Direction, char> {
 
     auto format( const env::Direction &Dir, format_context &ctx ) const
     {
-        switch ( Dir ) {
-        case env::Direction::Up:
-            return std::format_to( ctx.out( ), "Up" );
-        case env::Direction::Down:
-            return std::format_to( ctx.out( ), "Down" );
-        case env::Direction::Left:
-            return std::format_to( ctx.out( ), "Left" );
-        case env::Direction::Right:
-            return std::format_to( ctx.out( ), "Right" );
-        };
+        static const char *Strs[] = { "Up", "Down", "Left", "Right" };
+        return std::format_to( ctx.out( ), "{}",
+                               Strs[static_cast<std::size_t>( Dir )] );
     }
 };
 

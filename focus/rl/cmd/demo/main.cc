@@ -22,9 +22,10 @@ main( )
 
     for ( ;; ) {
         Env.render( );
-        const auto &Actions = Env.getLegalActions( );
-        env::printLegalActions( Actions );
-        auto ActionToTake = env::sampleLegalActions( Actions );
+        const auto &ActionMasks = Env.getLegalActionMasks( );
+        env::printLegalActions<env::Direction>( ActionMasks );
+        auto ActionToTake =
+            env::sampleLegalActions<env::Direction>( ActionMasks );
         std::print( "Action To Take: {}\n", ActionToTake );
         if ( Env.step( ActionToTake ) ) break;
     }

@@ -19,7 +19,7 @@ Env::check( ) -> void
 }
 
 auto
-Env::render( ) -> void
+Env::render( ) const -> void
 {
     for ( std::size_t row = 0; row < maze.size( ); row++ ) {
         for ( std::size_t col = 0; col < maze[std::size_t( row )].size( );
@@ -57,22 +57,17 @@ Env::step( Direction Dir ) -> bool
 
     return maze[x][y] == 'g';
 }
+
 auto
-Env::getLegalActions( ) -> std::vector<Direction>
+Env::getLegalActionMasks( ) const -> std::vector<int>
 {
-    std::vector<Direction> Actions{ };
-    if ( x >= 1 && maze[x - 1][y] != 'x' ) {
-        Actions.push_back( Direction::Up );
-    }
-    if ( x < maze.size( ) - 1 && maze[x + 1][y] != 'x' ) {
-        Actions.push_back( Direction::Down );
-    }
-    if ( y >= 1 && maze[x][y - 1] != 'x' ) {
-        Actions.push_back( Direction::Left );
-    }
-    if ( y < maze[x].size( ) - 1 && maze[x][y + 1] != 'x' ) {
-        Actions.push_back( Direction::Right );
-    }
+    std::vector<int> Actions{ };
+    Actions.push_back( ( x >= 1 && maze[x - 1][y] != 'x' ) ? 1 : 0 );
+    Actions.push_back( ( x < maze.size( ) - 1 && maze[x + 1][y] != 'x' ) ? 1
+                                                                         : 0 );
+    Actions.push_back( ( y >= 1 && maze[x][y - 1] != 'x' ) ? 1 : 0 );
+    Actions.push_back(
+        ( y < maze[x].size( ) - 1 && maze[x][y + 1] != 'x' ) ? 1 : 0 );
     return Actions;
 }
 }  // namespace env
