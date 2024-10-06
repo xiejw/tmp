@@ -58,8 +58,7 @@ Env::step( Direction Dir ) -> std::unique_ptr<Result>
     return std::make_unique<Result>(
         /*Reward = */ -1,
         /*End    = */ maze[x][y] == 'g',
-        /*StartX = */ x,
-        /*StartY = */ y );
+        /*State  = */ State{ .X = x, .Y = y } );
 }
 
 auto

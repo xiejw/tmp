@@ -25,11 +25,15 @@ struct Env {
     std::size_t                 y{ };
 
   public:
+    struct State {
+        std::size_t X;
+        std::size_t Y;
+    };
+
     struct Result {
-        f32_t       Reward;
-        bool        End;
-        std::size_t StateX;
-        std::size_t StateY;
+        f32_t Reward;
+        bool  End;
+        State State;
     };
 
   public:
