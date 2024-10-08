@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "env.h"
+#include "policy.h"
 
 int
 main( )
