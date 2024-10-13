@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"rl/lib/env"
 )
 
 var (
@@ -9,5 +9,6 @@ var (
 )
 
 func main() {
-	fmt.Printf("maze %v", MAZE)
+	e := env.New(MAZE)
+	e.Render()
 }
