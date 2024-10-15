@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-type MazeDir int
+type MazeDir int64
 
 const (
 	Up MazeDir = iota
@@ -49,7 +49,7 @@ func (env *MazeEnv) Render() {
 	fmt.Printf("%v", buf.String())
 }
 
-func (env *MazeEnv) Step(dir MazeDir) *Result[*MazeState] {
+func (env *MazeEnv) Step(dir MazeDir) *Result[MazeState] {
 	curState := &env.state
 	switch dir {
 	case Up:
@@ -64,16 +64,16 @@ func (env *MazeEnv) Step(dir MazeDir) *Result[*MazeState] {
 
 	valid := env.isStateValid()
 	if !valid {
-		return &Result[*MazeState]{Valid: valid}
+		return &Result[MazeState]{Valid: valid}
 	}
 
 	end := env.isGameEnd()
 	if end {
-		return &Result[*MazeState]{Valid: valid, End: end}
+		return &Result[MazeState]{Valid: valid, End: end}
 	}
 
 	stateCopy := *curState
-	return &Result[*MazeState]{
+	return &Result[MazeState]{
 		Valid:  valid,
 		End:    end,
 		Reward: -1,
@@ -81,15 +81,11 @@ func (env *MazeEnv) Step(dir MazeDir) *Result[*MazeState] {
 	}
 }
 
-func (env *MazeEnv) State() *MazeState {
+func (env *MazeEnv) GetState() *MazeState {
 	return &env.state
 }
 
-func (env *MazeEnv) Action(x int64) MazeDir {
-	return MazeDir(x)
-}
-
-func (env *MazeEnv) LegalActionMasks() []int64 {
+func (env *MazeEnv) GetLegalActionIdMasks() []int64 {
 	var masks [DirMax]int64
 	row := env.state.Row
 	col := env.state.Col

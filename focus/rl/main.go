@@ -11,19 +11,22 @@ var (
 	MAZE []string = []string{"sx..", "....", "..x.", "..xg"}
 )
 
+type Action = env.MazeDir
+type State = env.MazeState
+
 func main() {
-	var e env.Env[env.MazeDir, *env.MazeState] = env.New(MAZE)
-	s := e.State()
+	var e env.Env[Action, State] = env.New(MAZE)
+	s := e.GetState()
 
 	for {
 		e.Render()
-		masks := e.LegalActionMasks()
-		p := policy.NewRandom[*env.MazeState]()
+		masks := e.GetLegalActionIdMasks()
+		p := policy.NewRandom[State]()
 		actionIdx := p.Predict(s, masks)
 
 		log.Printf("action %v", actionIdx)
 
-		result := e.Step(e.Action(actionIdx))
+		result := e.Step(Action(actionIdx))
 		if result.End {
 			break
 		}

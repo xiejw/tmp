@@ -11,7 +11,7 @@ func NewRandom[State any]() *Random[State] {
 	return new(Random[State])
 }
 
-func (p *Random[State]) Predict(_s State, mask []int64) int64 {
+func (p *Random[State]) Predict(_s *State, mask []int64) int64 {
 	n := int64(len(mask))
 	for {
 		i := rand.Int64N(n)

@@ -4,13 +4,12 @@ type Result[State any] struct {
 	Valid  bool
 	End    bool
 	Reward float32
-	State  State
+	State  *State
 }
 
-type Env[Action any, State any] interface {
+type Env[Action ~int64, State any] interface {
 	Render()
-	State() State
+	GetState() *State
+	GetLegalActionIdMasks() []int64
 	Step(Action) *Result[State]
-	LegalActionMasks() []int64
-	Action(int64) Action
 }
