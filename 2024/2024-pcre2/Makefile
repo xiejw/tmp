@@ -1,7 +1,7 @@
 BUIlD     = .build
 
 run: compile
-	${BUIlD}/demo '(?i:a)bc(?!\p{N})' "Abc1Abc123Abcdabcd"
+	${BUIlD}/demo '(?i:a)(?<inner_g>b)(c)(?!\p{N})' "Abc1Abc123Abcdabcd"
 
 compile: | ${BUIlD}
 	${CC} -std=c23 -Wall main.c -lpcre2-8 -o ${BUIlD}/demo
