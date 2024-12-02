@@ -1,0 +1,33 @@
+name: test
+run-name: ${{ github.actor }} is running tests for ${{ github.workflow }}
+on: [push]
+env:
+  CLANG_VERSION: 15
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout tmp
+        uses: actions/checkout@v4
+
+      # --------------------------------------------------------------------------
+      # Clang related
+      #
+      # https://brandur.org/fragments/github-actions-env-vars-in-env-vars
+      - name: Set environmental variables for Clang
+        shell: bash
+        run: |
+          echo "CC=clang-${CLANG_VERSION}" >> $GITHUB_ENV
+          echo "CXX=clang++-${CLANG_VERSION}" >> $GITHUB_ENV
+      - name: Install LLVM and Clang
+        shell: bash
+        run: sudo apt-get install -y --no-install-recommends clang-${CLANG_VERSION}
+      - name: Display Clang version
+        shell: bash
+        run: ${CC} --version
+
+      # --------------------------------------------------------------------------
+      # Clang related
+      #
+      - name: Run Test
+        run: make -C ${{ github.workspace }} test
