@@ -2,7 +2,7 @@ name: test
 run-name: ${{ github.actor }} is running tests for ${{ github.workflow }}
 on: [push]
 env:
-  CLANG_VERSION: 17
+  CLANG_VERSION: 18
 jobs:
   build:
     runs-on: ubuntu-24.04
