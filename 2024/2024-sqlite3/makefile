@@ -1,6 +1,3 @@
-# In order to use sqlite3 in debian, install
-# - sudo apt install libsqlite3-dev
-
 CFLAGS         += -std=c23 -Wall -Werror -pedantic -Wfatal-errors
 CFLAGS         += -Wconversion -Wshadow
 
