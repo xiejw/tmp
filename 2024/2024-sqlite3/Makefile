@@ -8,10 +8,23 @@ BUIlD           = .build
 
 .PHONY: run 01
 
-run: 01
-	${BUIlD}/01
+SQLS_TO_RUN     = "create table tbl1(one text, two int);   \
+		   select count(*) from tbl1;              \
+		   insert into tbl1 values('hello!',10);   \
+		   insert into tbl1 values('goodbye', 20); \
+		   select * from tbl1;"
+
+run: 01 02
+	echo "Run all"                                                                         && \
+		echo "-> Run 01"                                                               && \
+		${BUIlD}/01                                                                    && \
+		echo "-> Run 02"                                                               && \
+		${BUIlD}/02 ${SQLS_TO_RUN}
 
 01: 01_cfg.c | ${BUIlD}
+	${CC} ${CFLAGS} ${LDFLAGS} -o ${BUIlD}/$@ $^
+
+02: 02_exec.c | ${BUIlD}
 	${CC} ${CFLAGS} ${LDFLAGS} -o ${BUIlD}/$@ $^
 
 fmt:
