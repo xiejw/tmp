@@ -1,3 +1,0 @@
-[submodule "pl/absl/third_party/absl"]
-	path = pl/absl/third_party/absl
-	url = https://github.com/abseil/abseil-cpp.git
