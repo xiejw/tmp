@@ -11,7 +11,7 @@ BUIlD           = .build
 run: 01
 	${BUIlD}/01
 
-01: 01_version.c | ${BUIlD}
+01: 01_cfg.c | ${BUIlD}
 	${CC} ${CFLAGS} ${LDFLAGS} -o ${BUIlD}/$@ $^
 
 fmt:
