@@ -12,8 +12,11 @@ run: compile
 compile: | ${BUIlD}
 	${CC} ${CFLAGS} ${LDFLAGS} main.c -o ${BUIlD}/demo
 
+fmt:
+	clang-format -i -style file *.c
+
 ${BUIlD}:
 	mkdir -p ${BUIlD}
 
-fmt:
-	clang-format -i -style file *.c
+clean:
+	rm -rf ${BUIlD}
