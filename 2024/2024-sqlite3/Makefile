@@ -4,6 +4,7 @@ CFLAGS         += -Wconversion -Wshadow
 CFLAGS         += $(shell pkg-config sqlite3 --cflags)
 LDFLAGS        += $(shell pkg-config sqlite3 --libs)
 
+SH              = sh
 BUIlD           = .build
 
 .PHONY: run 01
@@ -19,7 +20,10 @@ run: 01 02
 		echo "-> Run 01"                                                               && \
 		${BUIlD}/01                                                                    && \
 		echo "-> Run 02"                                                               && \
-		${BUIlD}/02 ${SQLS_TO_RUN}
+		${BUIlD}/02 ${SQLS_TO_RUN}                                                     && \
+		echo "-> Run 03"                                                               && \
+		${SH} 03_script_with_csv.sh                                                    && \
+		echo "-> Done"
 
 01: 01_cfg.c | ${BUIlD}
 	${CC} ${CFLAGS} ${LDFLAGS} -o ${BUIlD}/$@ $^
