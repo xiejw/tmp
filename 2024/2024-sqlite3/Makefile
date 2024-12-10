@@ -13,9 +13,9 @@ SQLS_TO_RUN     = "create table tbl1(one text, two int);   \
 		   select count(*) from tbl1;              \
 		   insert into tbl1 values('hello!',10);   \
 		   insert into tbl1 values('goodbye', 20); \
-		   select * from tbl1;"
+		   select * from tbl1;   "
 
-run: 01 02
+run: 01 02 04
 	echo "Run all"                                                                         && \
 		echo "-> Run 01"                                                               && \
 		${BUIlD}/01                                                                    && \
@@ -30,6 +30,10 @@ run: 01 02
 
 02: 02_exec.c | ${BUIlD}
 	${CC} ${CFLAGS} ${LDFLAGS} -o ${BUIlD}/$@ $^
+
+04: 04_step.c | ${BUIlD}
+	${CC} ${CFLAGS} ${LDFLAGS} -o ${BUIlD}/$@ $^ && ${BUIlD}/$@ ${SQLS_TO_RUN}
+
 
 fmt:
 	clang-format -i --style=file *.c
