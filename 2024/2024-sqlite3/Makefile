@@ -23,6 +23,8 @@ run: 01 02 04
 		${BUIlD}/02 ${SQLS_TO_RUN}                                                     && \
 		echo "-> Run 03"                                                               && \
 		${SH} 03_script_with_csv.sh                                                    && \
+		echo "-> Run 04"                                                               && \
+	       	${BUIlD}/04 ${SQLS_TO_RUN}
 		echo "-> Done"
 
 01: 01_cfg.c | ${BUIlD}
@@ -32,8 +34,7 @@ run: 01 02 04
 	${CC} ${CFLAGS} ${LDFLAGS} -o ${BUIlD}/$@ $^
 
 04: 04_step.c | ${BUIlD}
-	${CC} ${CFLAGS} ${LDFLAGS} -o ${BUIlD}/$@ $^ && ${BUIlD}/$@ ${SQLS_TO_RUN}
-
+	${CC} ${CFLAGS} ${LDFLAGS} -o ${BUIlD}/$@ $^
 
 fmt:
 	clang-format -i --style=file *.c

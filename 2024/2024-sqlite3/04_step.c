@@ -1,10 +1,10 @@
 /*
  * ===----- USAGE -----------------------------------------------------------===
- * This script demostrates how to use One-Step Query Execution Interface
- * (sqlite3_exec).
+ * This script demostrates how to use prepare, step and finalize to run SQL
+ * queries. Particularly, it takes a multi sql statements string and process it
+ * one each time.
  *
- * It runs all statements in the SQL string (no binding). Caller is responsible
- * for escaping for safety. But very convenient.
+ * It runs all statements in the SQL string (no binding in this example).
  *
  * References:
  * - https://www.sqlite.org/c3ref/open.html
@@ -24,31 +24,57 @@
 #include <string.h>
 
 void
-handleRow( sqlite3_stmt *pStmt )
+handle_sqlite_row( sqlite3_stmt *pStmt )
 {
     int colNum = sqlite3_column_count( pStmt );
     for ( int i = 0; i < colNum; i++ ) {
+        /* No matter the data type, column_text is ok to use */
         printf( "-> value (id:%d): %s\n", i, sqlite3_column_text( pStmt, i ) );
     }
 }
 
 int
-isEmptyStr( const char *z )
+handle_sqlite_statement( sqlite3 *db, sqlite3_stmt *pStmt )
+{
+    while ( 1 ) {
+        int rc = sqlite3_step( pStmt );
+        switch ( rc ) {
+        case SQLITE_DONE:
+            /* We are really done here. */
+            return 0;
+        case SQLITE_ROW:
+            handle_sqlite_row( pStmt );
+            continue;
+        default:
+            /* According to the official doc [1], seems only SQLITE_MISUSE is
+             * not associated with sqlite3_errmsg. All other error codes can
+             * result in printing some error messages with sqlite3_errmsg.
+             *
+             * [1]: https://www.sqlite.org/c3ref/step.html
+             */
+            fprintf( stderr, "Can't step statement (rc: %d) %s\n", rc,
+                     sqlite3_errmsg( db ) );
+            return 1;
+        }
+    }
+}
+
+int
+is_str_empty( const char *z )
 {
     if ( z == NULL ) return 1;
-    while ( z[0] == ' ' ) z++;
+    while ( z[0] == ' ' || z[0] == '\n' || z[0] == '\r' || z[0] == '\t' ) z++;
     return z[0] == 0;
 }
 
 int
 main( int argc, char **argv )
 {
-    sqlite3      *db      = NULL;
-    sqlite3_stmt *pStmt   = NULL;
-    char         *zErrMsg = 0;
-    int           rc;
-    const char   *zDBName  = ""; /* In memory. Destroy during close. */
-    int           exitCode = 0;
+    sqlite3    *db      = NULL;
+    char       *zErrMsg = 0;
+    int         rc;
+    const char *zDBName  = ""; /* In memory. Destroy during close. */
+    int         exitCode = 0;
 
     if ( argc != 2 ) {
         fprintf( stderr, "Usage: %s SQL-STATEMENT\n", argv[0] );
@@ -65,35 +91,27 @@ main( int argc, char **argv )
     const char *zTail = NULL;
 
     while ( 1 ) {
+        sqlite3_stmt *pStmt = NULL;
         rc =
             sqlite3_prepare_v2( db, zSql, (int)strlen( zSql ), &pStmt, &zTail );
         if ( rc != SQLITE_OK ) {
             fprintf( stderr, "SQL error: %s\n", zErrMsg );
             sqlite3_free( zErrMsg );
+            sqlite3_finalize( pStmt );
             goto cleanup_with_error;
         }
 
-        rc = sqlite3_step( pStmt );
+        rc = handle_sqlite_statement( db, pStmt );
+        if ( rc ) break;
 
-        switch ( rc ) {
-        case SQLITE_DONE:
-            break;
-        case SQLITE_ROW:
-            handleRow( pStmt );
-            break;
-        default:
-            fprintf( stderr, "Can't step statement (rc: %d) %s\n", rc,
-                     sqlite3_errmsg( db ) );
-            goto cleanup_with_error;
-        }
-
-        if ( isEmptyStr( zTail ) ) {
+        if ( is_str_empty( zTail ) ) {
             printf( "-> Tail sql (empty)" );
+            sqlite3_finalize( pStmt );
             break;
         }
-        printf( "-> Tail sql (offset %zu): \"%s\"\n", zTail - zSql, zTail );
 
         sqlite3_finalize( pStmt );
+        printf( "-> Tail sql (offset %zu): \"%s\"\n", zTail - zSql, zTail );
         zSql  = zTail;
         zTail = NULL;
         pStmt = NULL;
@@ -105,7 +123,6 @@ cleanup_with_error:
     exitCode = 1;
 
 cleanup:
-    sqlite3_finalize( pStmt );
     sqlite3_close( db );
     return exitCode;
 }
