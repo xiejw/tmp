@@ -12,6 +12,7 @@
  * - https://www.sqlite.org/c3ref/step.html
  * - https://www.sqlite.org/c3ref/column_count.html
  * - https://www.sqlite.org/c3ref/column_blob.html
+ * - https://www.sqlite.org/c3ref/errcode.html
  *
  * See also for binding values in prepared statement (not demo'ed in this code).
  * - https://www.sqlite.org/c3ref/bind_blob.html
@@ -45,13 +46,19 @@ handle_sqlite_statement( sqlite3 *db, sqlite3_stmt *pStmt )
         case SQLITE_ROW:
             handle_sqlite_row( pStmt );
             continue;
-        default:
+        case SQLITE_MISUSE:
             /* According to the official doc [1], seems only SQLITE_MISUSE is
-             * not associated with sqlite3_errmsg. All other error codes can
-             * result in printing some error messages with sqlite3_errmsg.
+             * not associated with sqlite3_errmsg. This is confirmed in [2] as
+             * well. All other error codes can result in printing some error
+             * messages with sqlite3_errmsg.
              *
              * [1]: https://www.sqlite.org/c3ref/step.html
+             * [2]: https://www.sqlite.org/c3ref/errcode.html
              */
+            fprintf( stderr, "Can't step statement (rc: %d) %s\n", rc,
+                     "misuse" );
+        default:
+            /* Print error message via sqlite3_errmsg. */
             fprintf( stderr, "Can't step statement (rc: %d) %s\n", rc,
                      sqlite3_errmsg( db ) );
             return 1;
