@@ -30,7 +30,8 @@ handle_sqlite_row( sqlite3_stmt *pStmt )
     int colNum = sqlite3_column_count( pStmt );
     for ( int i = 0; i < colNum; i++ ) {
         /* No matter the data type, column_text is ok to use */
-        printf( "-> value (id:%d): %s\n", i, sqlite3_column_text( pStmt, i ) );
+        printf( "\t-> value (id:%d): %s\n", i,
+                sqlite3_column_text( pStmt, i ) );
     }
 }
 
@@ -112,7 +113,7 @@ main( int argc, char **argv )
         if ( rc ) break;
 
         if ( is_str_empty( zTail ) ) {
-            printf( "-> Tail sql (empty)" );
+            printf( "-> Tail sql (empty)\n" );
             sqlite3_finalize( pStmt );
             break;
         }
