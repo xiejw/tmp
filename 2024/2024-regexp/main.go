@@ -7,13 +7,22 @@ import (
 )
 
 func main() {
+	fmt.Printf("Go Code\n")
 	PrintMatchOrNot(`a[bc]`, `ab`)
 	PrintMatchOrNot(`a[bc]`, `ad`)
+	PrintMatchOrNot(`a(?!b)`, `a`)
+	PrintMatchOrNot(`a(?!b)`, `ab`)
+	PrintMatchOrNot(`a(?!b)`, `ac`)
 	PrintMatchOrNot(`a+(?=bc)`, `aaaadabcaadbc`)
 	PrintMatchOrNot(`a+(?!bc)`, `abcaadbc`)
 	PrintMatchOrNot(`\s+(?!\S)`, `World   `)
+	PrintMatchOrNot(`\s+(?:[^\S])`, "World   ")
 	PrintMatchOrNot(`\s+(?!\S)`, `   World`)
+	PrintMatchOrNot(`\s+(?:[^\S])`, "   World")
 	PrintMatchOrNot(`\s+(?!\S)`, `Hello   World  `)
+	PrintMatchOrNot(` ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+`, `Hello   World  `)
+	PrintMatchOrNot(`\s+(?:[^\S])`, "Hello   World  ")
+	PrintMatchOrNot(`\s+`, "Hello   World  ")
 }
 
 func PrintMatchOrNot(pat, str string) {
