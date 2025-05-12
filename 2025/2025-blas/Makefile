@@ -11,6 +11,10 @@ run_01: EXTRA_FLAGS = -lblas
 run_01: | ${BUILD}
 	clang -o ${BUILD}/a.out ${CFLAGS} ${LDFLAGS} ${EXTRA_FLAGS} 01_linux_openblas.c && ${BUILD}/a.out
 
+run_02: EXTRA_FLAGS = -isystem ${HOME}/Workspace/build/blis/include/firestorm ${HOME}/Workspace/build/blis/lib/firestorm/libblis.a
+run_02: | ${BUILD}
+	clang -o ${BUILD}/a.out ${CFLAGS} ${LDFLAGS} 02_linux_blis.c ${EXTRA_FLAGS} && ${BUILD}/a.out
+
 ${BUILD}:
 	mkdir -p ${BUILD}
 
