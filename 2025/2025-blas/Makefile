@@ -3,7 +3,7 @@ BUILD    = .build
 CFLAGS  += -O3 -march=native -std=c99 -Wall -Werror -pedantic -Wextra -Wfatal-errors -Wconversion
 LDFLAGS += -lm -ffast-math
 
-run_00: EXTRA_FLAGS = -DACCELERATE_NEW_LAPAC -framework Accelerate
+run_00: EXTRA_FLAGS = -DACCELERATE_NEW_LAPACK -framework Accelerate
 run_00: | ${BUILD}
 	clang -o ${BUILD}/a.out ${CFLAGS} ${LDFLAGS} ${EXTRA_FLAGS} 00_mac_blas.c && ${BUILD}/a.out
 
