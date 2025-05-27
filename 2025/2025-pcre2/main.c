@@ -2,7 +2,8 @@
  *
  * - To install dependency:
  *
- *       sudo apt install libpcre2-dev
+ *       sudo apt install libpcre2-dev   # Debian
+ *       brew install pcre2              # macOs
  *
  * - To see usage:
  *
