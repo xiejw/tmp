@@ -1,0 +1,18 @@
+// This module contains all code.
+module;
+
+#include <iostream>
+
+// Export the module with a name that matches the filename.
+export module mod;
+
+// Modules are orthogonal to namespaces.
+namespace demo {
+
+// We're exporting this class with the 'export' keyword.
+export class Printer {
+  public:
+    void Print( ) { std::cout << "Hi from the module\n"; }
+};
+
+}  // namespace demo

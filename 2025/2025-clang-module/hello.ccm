@@ -1,0 +1,13 @@
+// This module does not contain all code.
+module;
+
+export module hello;
+
+namespace hello {
+
+export class Printer {
+  public:
+    void Print( );
+};
+
+}  // namespace demo
