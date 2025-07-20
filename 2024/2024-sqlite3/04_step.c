@@ -78,8 +78,7 @@ is_str_empty( const char *z )
 int
 main( int argc, char **argv )
 {
-    sqlite3    *db      = NULL;
-    char       *zErrMsg = 0;
+    sqlite3    *db = NULL;
     int         rc;
     const char *zDBName  = ""; /* In memory. Destroy during close. */
     int         exitCode = 0;
@@ -103,8 +102,7 @@ main( int argc, char **argv )
         rc =
             sqlite3_prepare_v2( db, zSql, (int)strlen( zSql ), &pStmt, &zTail );
         if ( rc != SQLITE_OK ) {
-            fprintf( stderr, "SQL error: %s\n", zErrMsg );
-            sqlite3_free( zErrMsg );
+            fprintf( stderr, "SQL prepare error: %s\n", sqlite3_errmsg( db ) );
             sqlite3_finalize( pStmt );
             goto cleanup_with_error;
         }
