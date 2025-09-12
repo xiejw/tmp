@@ -1,3 +1,7 @@
+// Seems the code takes lots of bites operations which are easier get wrong.
+// It slows down my process of coding a lot even though it is very very fun.
+// Let me think again.
+//
 // Design Philosophy
 //
 // - The whole map table is a double linked list.
