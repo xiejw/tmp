@@ -1,3 +1,33 @@
+/* A simple DSL for neural network.
+ *
+ * It is deadly simple so very easy to parse by program and human.
+ *
+ * It looks like protobuf and the compiler will compiles down to C code with
+ * user chosen struct name.
+ *
+ *    // Define the network.
+ *    (network
+ *      (config name=nn2)
+ *      (params (input_size 784) (hidden_units 128))
+ *      (layers
+ *        (linear name=fc1 in=input_size out=hidden_units act=relu)
+ *        (linear name=fc2 in=hidden_units out=10 act=softmax)
+ *      )
+ *    )
+ *
+ *    // Generate generator
+ *
+ *    %out_name generator nn2
+ *    %param input_size 32
+ *    %generate
+ *
+ *    // Generate policy
+ *
+ *    %out_name policy nn2
+ *    %param input_size 64
+ *    %generate
+ *
+ */
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
