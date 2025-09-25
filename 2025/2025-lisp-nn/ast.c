@@ -1,9 +1,13 @@
 /* A simple DSL for neural network.
  *
- * It is deadly simple so very easy to parse by program and human.
+ * Design Goals:
+ * - It is deadly simple so very easy to parse by program and human.
+ * - It is declarative so no hidden magic.
+ * - It is self contained so easy to audit.
  *
- * It looks like protobuf and the compiler will compiles down to C code with
- * user chosen struct name.
+ * Design Inspiration:
+ * - It looks like protobuf and the compiler will compiles down to C code with
+ *   user chosen struct type name.
  *
  *    // Define the network.
  *    (network
@@ -14,6 +18,8 @@
  *        (linear name=fc2 in=hidden_units out=10 act=softmax)
  *      )
  *    )
+ *
+ *    %% // A separator
  *
  *    // Generate generator
  *
@@ -28,6 +34,7 @@
  *    %generate
  *
  */
+#include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,10 +61,11 @@ strndup_c( const char *s, size_t n )
     return res;
 }
 
-Node *
+static Node *
 make_node( NodeType t )
 {
     Node *n = calloc( 1, sizeof( Node ) );
+    assert( n != NULL );
     n->type = t;
     return n;
 }
@@ -69,7 +77,7 @@ typedef struct {
     size_t      pos;
 } Lexer;
 
-char *
+static char *
 next_token( Lexer *lx )
 {
     const char *s = lx->src;
