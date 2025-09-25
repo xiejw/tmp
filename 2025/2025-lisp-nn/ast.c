@@ -45,7 +45,9 @@ typedef struct Node {
 
 //
 // --- Utility ---
-char *
+
+// Duplicates the s and caller owns it.
+static char *
 strndup_c( const char *s, size_t n )
 {
     char *res = malloc( n + 1 );
