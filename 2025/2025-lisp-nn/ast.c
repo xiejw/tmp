@@ -153,6 +153,7 @@ parse_expr( Lexer *lx )
         free( tok );
         return parse_list( lx );
     }
+    // TODO what's this?
     free( tok );
     return NULL;
 }
@@ -188,6 +189,9 @@ main( )
         "  (layers\n"
         "    (linear name=fc1 in=input_size out=hidden_units act=relu)\n"
         "    (linear name=fc2 in=hidden_units out=10 act=softmax)))";
+
+    printf( "=== --- RAW input --- ===\n%s\n", input );
+    printf( "=== --- Result    --- ===\n" );
 
     Lexer lx   = { input, 0 };
     Node *root = parse_expr( &lx );
