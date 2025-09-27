@@ -1,9 +1,10 @@
 BUILD    = .build
+CXXFLAGS = -std=c++17
 
 compile: ast
 
 ast: | ${BUILD}
-	${CC} ${CFLAGS} ${LDFLAGS} -o ${BUILD}/$@ $@.c
+	${CXX} ${CXXFLAGS} ${LDFLAGS} -o ${BUILD}/$@ $@.cc
 
 ${BUILD}:
 	mkdir -p ${BUILD}

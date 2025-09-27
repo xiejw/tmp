@@ -34,21 +34,36 @@
  *    %generate
  *
  */
-#include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
+#include <memory>
 
 typedef enum { NODE_LIST, NODE_SYMBOL, NODE_NUMBER } NodeType;
 
 typedef struct Node {
+  public:
     NodeType      type;
     char         *sym;       // if SYMBOL
     double        num;       // if NUMBER
     struct Node **children;  // if LIST
     int           child_count;
+
+  public:
+    ~Node( );
 } Node;
+
+Node::~Node( )
+{
+    free( sym );
+    for ( int i = 0; i < child_count; i++ ) {
+        children[i]->~Node( );
+        free( children[i] );
+    }
+    free( children );
+}
 
 //
 // --- Utility ---
@@ -57,7 +72,7 @@ typedef struct Node {
 static char *
 strndup_c( const char *s, size_t n )
 {
-    char *res = malloc( n + 1 );
+    char *res = (char *)malloc( n + 1 );
     memcpy( res, s, n );
     res[n] = '\0';
     return res;
@@ -66,7 +81,7 @@ strndup_c( const char *s, size_t n )
 static Node *
 make_node( NodeType t )
 {
-    Node *n = calloc( 1, sizeof( Node ) );
+    Node *n = (Node *)calloc( 1, sizeof( Node ) );
     assert( n != NULL );
     n->type = t;
     return n;
@@ -102,9 +117,9 @@ next_token( Lexer *lx )
 
 //
 // --- Parser ---
-Node *parse_expr( Lexer *lx );
+std::unique_ptr<Node> parse_expr( Lexer *lx );
 
-Node *
+std::unique_ptr<Node>
 parse_list( Lexer *lx )
 {
     Node *n        = make_node( NODE_LIST );
@@ -115,12 +130,12 @@ parse_list( Lexer *lx )
     while ( ( tok = next_token( lx ) ) ) {
         if ( strcmp( tok, ")" ) == 0 ) {
             free( tok );
-            return n;
+            return std::unique_ptr<Node>{ n };
         } else if ( strcmp( tok, "(" ) == 0 ) {
             free( tok );
-            Node *child                   = parse_list( lx );
-            n->children                   = realloc( n->children,
-                                                     ( n->child_count + 1 ) * sizeof( Node * ) );
+            Node *child = parse_list( lx ).release( );
+            n->children = (Node **)realloc(
+                n->children, ( n->child_count + 1 ) * sizeof( Node * ) );
             n->children[n->child_count++] = child;
         } else {
             // symbol or number
@@ -135,16 +150,16 @@ parse_list( Lexer *lx )
                 child->sym = tok;  // keep
                 tok        = NULL;
             }
-            n->children                   = realloc( n->children,
-                                                     ( n->child_count + 1 ) * sizeof( Node * ) );
+            n->children = (Node **)realloc(
+                n->children, ( n->child_count + 1 ) * sizeof( Node * ) );
             n->children[n->child_count++] = child;
             free( tok );
         }
     }
-    return n;
+    return std::unique_ptr<Node>{ n };
 }
 
-Node *
+std::unique_ptr<Node>
 parse_expr( Lexer *lx )
 {
     char *tok = next_token( lx );
@@ -194,7 +209,7 @@ main( )
     printf( "=== --- Result    --- ===\n" );
 
     Lexer lx   = { input, 0 };
-    Node *root = parse_expr( &lx );
-    print_ast( root, 0 );
+    auto  root = parse_expr( &lx );
+    print_ast( root.get( ), 0 );
     return 0;
 }
