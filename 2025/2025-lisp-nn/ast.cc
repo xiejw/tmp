@@ -58,7 +58,7 @@ typedef struct Node {
 static std::unique_ptr<Node>
 make_node( NodeType t )
 {
-    auto n = std::make_unique<Node>( );
+    auto n  = std::make_unique<Node>( );
     n->type = t;
     return n;
 }

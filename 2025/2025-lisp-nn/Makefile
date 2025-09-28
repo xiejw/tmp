@@ -1,5 +1,13 @@
-BUILD    = .build
-CXXFLAGS = -std=c++17
+BUILD     = .build
+CXXFLAGS += -std=c++17 -Wall -Werror -pedantic -Wextra -Wfatal-errors -Wconversion
+
+ifdef ASAN
+CXXFLAGS += -g
+LDFLAGS  += -fsanitize=address
+endif
+
+run: compile
+	${BUILD}/ast
 
 compile: ast
 
