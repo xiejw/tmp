@@ -1,5 +1,8 @@
 BUILD     = .build
 CXXFLAGS += -std=c++17 -Wall -Werror -pedantic -Wextra -Wfatal-errors -Wconversion
+
+CXXFLAGS += -I${HOME}/Workspace/build/usr/include
+LDFLAGS  += -L${HOME}/Workspace/build/usr/lib
 LDFLAGS  += -lxml2
 
 ifdef ASAN
