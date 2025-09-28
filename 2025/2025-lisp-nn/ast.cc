@@ -40,40 +40,25 @@
 #include <cassert>
 #include <cstring>
 #include <memory>
+#include <string>
 #include <vector>
 
 typedef enum { NODE_LIST, NODE_SYMBOL, NODE_NUMBER } NodeType;
 
 typedef struct Node {
-  public:
     NodeType                           type;
-    char                              *sym;       // if SYMBOL
+    std::string                        sym;       // if SYMBOL
     double                             num;       // if NUMBER
     std::vector<std::unique_ptr<Node>> children;  // if LIST
-
-  public:
-    ~Node( );
 } Node;
-
-Node::~Node( ) { free( sym ); }
 
 //
 // --- Utility ---
 
-// Duplicates the s and caller owns it.
-static char *
-strndup_c( const char *s, size_t n )
-{
-    char *res = (char *)malloc( n + 1 );
-    memcpy( res, s, n );
-    res[n] = '\0';
-    return res;
-}
-
-static Node *
+static std::unique_ptr<Node>
 make_node( NodeType t )
 {
-    Node *n = new Node;
+    auto n = std::make_unique<Node>( );
     n->type = t;
     return n;
 }
@@ -85,15 +70,15 @@ typedef struct {
     size_t      pos;
 } Lexer;
 
-static char *
+static std::string
 next_token( Lexer *lx )
 {
     const char *s = lx->src;
     while ( isspace( s[lx->pos] ) ) lx->pos++;  // skip whitespace
-    if ( s[lx->pos] == '\0' ) return NULL;
+    if ( s[lx->pos] == '\0' ) return std::string{ };
 
     if ( s[lx->pos] == '(' || s[lx->pos] == ')' ) {
-        char *tok = strndup_c( s + lx->pos, 1 );
+        std::string tok{ s + lx->pos, 1 };
         lx->pos++;
         return tok;
     }
@@ -103,7 +88,7 @@ next_token( Lexer *lx )
             s[lx->pos] != ')' ) {
         lx->pos++;
     }
-    return strndup_c( s + start, lx->pos - start );
+    return std::string{ s + start, lx->pos - start };
 }
 
 //
@@ -113,48 +98,44 @@ std::unique_ptr<Node> parse_expr( Lexer *lx );
 std::unique_ptr<Node>
 parse_list( Lexer *lx )
 {
-    Node *n = make_node( NODE_LIST );
+    auto n = make_node( NODE_LIST );
 
-    char *tok;
-    while ( ( tok = next_token( lx ) ) ) {
-        if ( strcmp( tok, ")" ) == 0 ) {
-            free( tok );
-            return std::unique_ptr<Node>{ n };
-        } else if ( strcmp( tok, "(" ) == 0 ) {
-            free( tok );
+    while ( true ) {
+        std::string tok = next_token( lx );
+        if ( tok.empty( ) ) break;
+
+        if ( tok == ")" ) {
+            return n;
+        } else if ( tok == "(" ) {
             auto child = parse_list( lx );
             n->children.push_back( std::move( child ) );
         } else {
             // symbol or number
-            Node  *child;
-            char  *endptr;
-            double val = strtod( tok, &endptr );
+            std::unique_ptr<Node> child;
+            char                 *endptr;
+            double                val = strtod( tok.c_str( ), &endptr );
             if ( *endptr == '\0' ) {
                 child      = make_node( NODE_NUMBER );
                 child->num = val;
             } else {
                 child      = make_node( NODE_SYMBOL );
-                child->sym = tok;  // keep
-                tok        = NULL;
+                child->sym = std::move( tok );
             }
-            n->children.push_back( std::unique_ptr<Node>{ child } );
-            free( tok );
+            n->children.push_back( std::move( child ) );
         }
     }
-    return std::unique_ptr<Node>{ n };
+    return n;
 }
 
 std::unique_ptr<Node>
 parse_expr( Lexer *lx )
 {
-    char *tok = next_token( lx );
-    if ( !tok ) return NULL;
-    if ( strcmp( tok, "(" ) == 0 ) {
-        free( tok );
+    std::string tok = next_token( lx );
+    if ( tok.empty( ) ) return NULL;
+    if ( tok == "(" ) {
         return parse_list( lx );
     }
-    // TODO what's this?
-    free( tok );
+    // TODO panic
     return NULL;
 }
 
@@ -172,7 +153,7 @@ print_ast( Node *n, int depth )
         for ( int i = 0; i < depth; i++ ) printf( "  " );
         printf( ")\n" );
     } else if ( n->type == NODE_SYMBOL ) {
-        printf( "SYMBOL: %s\n", n->sym );
+        printf( "SYMBOL: %s\n", n->sym.c_str( ) );
     } else if ( n->type == NODE_NUMBER ) {
         printf( "NUMBER: %g\n", n->num );
     }
