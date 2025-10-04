@@ -1,0 +1,2 @@
+open:
+	mdbook serve --open
