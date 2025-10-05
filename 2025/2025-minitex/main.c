@@ -17,8 +17,8 @@
 
 #include "parser.h"
 
-int
-main( void )
+void
+test_read_file( )
 {
     size_t size;
     char  *data = read_file_to_buffer( "data/1.mt", &size );
@@ -29,10 +29,14 @@ main( void )
     } else {
         printf( " Failed. \n" );
     }
+}
 
-    data =
-        "Text before \\outer{some text and \\inner{deep content with "
-        "\\\\escaped slash} inside} end.";
+void
+test_parser( )
+{
+    const char *data =
+        "\\p{Text before \\outer{some text and \\inner{deep content with "
+        "\\\\escaped slash} inside} end.} continue";
 
     printf( "=== Input ===\n%s\n===      ===\n", data );
 
@@ -41,9 +45,14 @@ main( void )
     parse_all( data, &cmds, &count );
 
     for ( size_t i = 0; i < count; i++ ) cmd_print( cmds[i], 0 );
-
     for ( size_t i = 0; i < count; i++ ) cmd_free( cmds[i] );
     free( cmds );
-    return 0;
+}
+
+int
+main( void )
+{
+    test_read_file( );
+    test_parser( );
     return 0;
 }
