@@ -169,6 +169,7 @@ parse_all( const char *buf, Command ***out_cmds, size_t *out_count )
                 continue;
             }
         }
-        PANIC( "expected cmd" );
+        PANIC( "expected cmd, but got: `%.*s`", (int)( MIN( strlen( p ), 10 ) ),
+               p );
     }
 }

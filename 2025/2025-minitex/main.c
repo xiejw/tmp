@@ -11,6 +11,8 @@
         exit( 1 );                       \
     } while ( 0 )
 
+#define MIN( x, y ) ( ( x ) <= ( y ) ? ( x ) : ( y ) )
+
 #include "io.h"
 
 #include "parser.h"
@@ -31,6 +33,8 @@ main( void )
     data =
         "Text before \\outer{some text and \\inner{deep content with "
         "\\\\escaped slash} inside} end.";
+
+    printf( "=== Input ===\n%s\n===      ===\n", data );
 
     Command **cmds  = NULL;
     size_t    count = 0;
