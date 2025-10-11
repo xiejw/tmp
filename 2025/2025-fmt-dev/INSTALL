@@ -1,0 +1,15 @@
+https://fmt.dev/12.0/get-started/
+apt install libfmt-dev
+
+https://github.com/fmtlib/fmt/releases/download/12.0.0/fmt-12.0.0.zip
+
+cmake \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE \
+        -B ../build -S . \
+        -DCMAKE_INSTALL_PREFIX=$HOME/Workspace/build/usr  \
+        -DBUILD_SHARED_LIBS=FALSE -DCMAKE_BUILD_TYPE=Release
+
+make -C ../build
+make -C ../build install
+
+
