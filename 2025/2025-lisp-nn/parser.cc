@@ -1,56 +1,7 @@
-/* A simple DSL for neural network.
- *
- * Design Goals:
- * - It is deadly simple so very easy to parse by program and human.
- * - It is declarative so no hidden magic.
- * - It is self contained so easy to audit.
- *
- * Design Inspiration:
- * - It looks like protobuf and the compiler will compiles down to C code with
- *   user chosen struct type name.
- *
- *    // Define the network.
- *    (network
- *      (config name=nn2)
- *      (params (input_size 784) (hidden_units 128))
- *      (layers
- *        (linear name=fc1 in=input_size out=hidden_units act=relu)
- *        (linear name=fc2 in=hidden_units out=10 act=softmax)
- *      )
- *    )
- *
- *    %% // A separator
- *
- *    // Generate generator
- *
- *    %out_name generator nn2
- *    %param input_size 32
- *    %generate
- *
- *    // Generate policy
- *
- *    %out_name policy nn2
- *    %param input_size 64
- *    %generate
- *
- */
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <cassert>
-#include <cstring>
-#include <memory>
-#include <string>
-#include <vector>
+#include "parser.h"
 
-typedef enum { NODE_LIST, NODE_SYMBOL, NODE_NUMBER } NodeType;
-
-typedef struct Node {
-    NodeType                           type;
-    std::string                        sym;       // if SYMBOL
-    double                             num;       // if NUMBER
-    std::vector<std::unique_ptr<Node>> children;  // if LIST
-} Node;
+namespace luma {
+namespace {
 
 //
 // --- Utility ---
@@ -138,7 +89,17 @@ parse_expr( Lexer *lx )
     // TODO panic
     return NULL;
 }
+}  // namespace
 
+std::unique_ptr<Node>
+parse_expr( std::string_view input )
+{
+    Lexer lx   = { input.data( ), 0 };
+    auto  root = parse_expr( &lx );
+    return root;
+}
+
+namespace {
 //
 // --- Printer ---
 void
@@ -158,24 +119,12 @@ print_ast( Node *n, int depth )
         printf( "NUMBER: %g\n", n->num );
     }
 }
+}  // namespace
 
-//
-// --- Example ---
-int
-main( )
+void
+print( Node *n )
 {
-    const char *input =
-        "(network\n"
-        "  (params (input_size 784) (hidden_units 128))\n"
-        "  (layers\n"
-        "    (linear name=fc1 in=input_size out=hidden_units act=relu)\n"
-        "    (linear name=fc2 in=hidden_units out=10 act=softmax)))";
-
-    printf( "=== --- RAW input --- ===\n%s\n", input );
-    printf( "=== --- Result    --- ===\n" );
-
-    Lexer lx   = { input, 0 };
-    auto  root = parse_expr( &lx );
-    print_ast( root.get( ), 0 );
-    return 0;
+    print_ast( n, 0 );
 }
+
+}  // namespace luma
