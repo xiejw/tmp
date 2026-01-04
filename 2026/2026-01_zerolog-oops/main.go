@@ -1,8 +1,7 @@
 // Why is oops needed?
 //
-// - zerolog can have associated metadata but it is not near the root cause.
-//   oops is near the root cause which can record more structure.
-//
+//   - zerolog can have associated metadata but it is not near the root cause.
+//     oops is near the root cause which can record more structure.
 package main
 
 import (
@@ -35,6 +34,8 @@ func main() {
 			Err(err).
 			Msg("startup failed")
 
-		os.Exit(1)
+		log.Fatal().
+			Err(err).
+			Msg("abort")
 	}
 }
