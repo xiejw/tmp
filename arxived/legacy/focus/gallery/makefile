@@ -65,4 +65,4 @@ clean:
 	rm -rf ${BUILD}
 
 fmt:
-	~/Workspace/y/tools/clang_format_all.sh cmd include src
+	~/Workspace/y/tools/scripts/clang_format_all.sh cmd include src

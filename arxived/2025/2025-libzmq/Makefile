@@ -16,4 +16,4 @@ ${BUILD}:
 	mkdir -p ${BUILD}
 
 fmt:
-	~/Workspace/y/tools/clang_format_all.sh .
+	~/Workspace/y/tools/scripts/clang_format_all.sh .

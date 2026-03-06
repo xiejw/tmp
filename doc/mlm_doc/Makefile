@@ -1,2 +1,2 @@
 clean:
-	go run ~/Workspace/y/tools/delete_unused_dirs.go
+	go run ~/Workspace/y/tools/scripts/delete_unused_dirs.go

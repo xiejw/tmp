@@ -4,4 +4,4 @@ compile:
 	(which fd > /dev/null && fd --no-ignore --hidden pdf) || (echo '==>' Try to find all pdfs manually)
 
 clean:
-	go run ~/Workspace/y/tools/delete_unused_dirs.go
+	go run ~/Workspace/y/tools/scripts/delete_unused_dirs.go

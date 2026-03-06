@@ -73,7 +73,7 @@ ${BUILD_OBJ}:
 	@mkdir -p ${BUILD_OBJ}
 
 fmt:
-	@~/Workspace/y/tools/clang_format_all.sh .
+	@~/Workspace/y/tools/scripts/clang_format_all.sh .
 
 clean:
 	rm -rf ${BUILD}
