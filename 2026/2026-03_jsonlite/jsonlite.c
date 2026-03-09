@@ -1,11 +1,11 @@
 /*
- * sjson.c — SAX-style JSON parser implementation
+ * jsonlite.c — SAX-style JSON parser implementation
  *
  * Recursive-descent, single-pass, zero-allocation-friendly.
  * Conforms to RFC 8259.
  */
 
-#include "sjson.h"
+#include "jsonlite.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -19,19 +19,19 @@ typedef struct {
     size_t         line;
     size_t         col;
     int            depth;
-    sjson_callback cb;
+    jsonlite_callback cb;
     void          *user_data;
-    sjson_result   result;
+    jsonlite_result   result;
     char          *heap_buf; /* single heap allocation for oversized unescape */
-} sjson_parser;
+} jsonlite_parser;
 
 /* ---------- forward declarations ---------- */
 
-static int parse_value(sjson_parser *p);
+static int parse_value(jsonlite_parser *p);
 
 /* ---------- helpers ---------- */
 
-static void set_error(sjson_parser *p, sjson_error err)
+static void set_error(jsonlite_parser *p, jsonlite_error err)
 {
     p->result.error  = err;
     p->result.offset = p->pos;
@@ -39,13 +39,13 @@ static void set_error(sjson_parser *p, sjson_error err)
     p->result.column = p->col;
 }
 
-static int peek(const sjson_parser *p)
+static int peek(const jsonlite_parser *p)
 {
     if (p->pos >= p->len) return -1;
     return (unsigned char)p->json[p->pos];
 }
 
-static void advance(sjson_parser *p)
+static void advance(jsonlite_parser *p)
 {
     if (p->pos < p->len) {
         if (p->json[p->pos] == '\n') {
@@ -58,7 +58,7 @@ static void advance(sjson_parser *p)
     }
 }
 
-static void skip_whitespace(sjson_parser *p)
+static void skip_whitespace(jsonlite_parser *p)
 {
     while (p->pos < p->len) {
         char c = p->json[p->pos];
@@ -70,11 +70,11 @@ static void skip_whitespace(sjson_parser *p)
     }
 }
 
-static int emit(sjson_parser *p, const sjson_event *ev)
+static int emit(jsonlite_parser *p, const jsonlite_event *ev)
 {
     if (p->cb) {
         if (p->cb(ev, p->user_data) != 0) {
-            set_error(p, SJSON_ABORTED);
+            set_error(p, JSONLITE_ABORTED);
             return -1;
         }
     }
@@ -115,7 +115,7 @@ static int encode_utf8(unsigned long cp, char *buf)
 }
 
 /* Parse 4 hex digits for \uXXXX. Returns codepoint or -1 on error. */
-static long parse_hex4(sjson_parser *p)
+static long parse_hex4(jsonlite_parser *p)
 {
     unsigned long val = 0;
     int i;
@@ -123,7 +123,7 @@ static long parse_hex4(sjson_parser *p)
         int c = peek(p);
         int d = (c >= 0) ? hex_digit(c) : -1;
         if (d < 0) {
-            set_error(p, SJSON_INVALID_UNICODE);
+            set_error(p, JSONLITE_INVALID_UNICODE);
             return -1;
         }
         val = (val << 4) | (unsigned long)d;
@@ -134,7 +134,7 @@ static long parse_hex4(sjson_parser *p)
 
 /* ---------- parse_string ---------- */
 
-static int parse_string_impl(sjson_parser *p, sjson_str *out)
+static int parse_string_impl(jsonlite_parser *p, jsonlite_str *out)
 {
     size_t start_offset = p->pos;
 
@@ -159,7 +159,7 @@ static int parse_string_impl(sjson_parser *p, sjson_str *out)
             if (c < 0x20) {
                 /* unescaped control character */
                 p->pos = scan;
-                set_error(p, SJSON_INVALID_STRING);
+                set_error(p, JSONLITE_INVALID_STRING);
                 return -1;
             }
             scan++;
@@ -172,9 +172,9 @@ static int parse_string_impl(sjson_parser *p, sjson_str *out)
 
     /* Slow path: unescape into buffer */
     {
-        char stack_buf[SJSON_UNESCAPE_STACK_SIZE];
+        char stack_buf[JSONLITE_UNESCAPE_STACK_SIZE];
         char *buf = stack_buf;
-        size_t buf_cap = SJSON_UNESCAPE_STACK_SIZE;
+        size_t buf_cap = JSONLITE_UNESCAPE_STACK_SIZE;
         size_t buf_len = 0;
         int used_heap = 0;
 
@@ -185,7 +185,7 @@ static int parse_string_impl(sjson_parser *p, sjson_str *out)
             int c = peek(p);
             if (c < 0) {
                 if (used_heap) free(buf);
-                set_error(p, SJSON_UNEXPECTED_END);
+                set_error(p, JSONLITE_UNEXPECTED_END);
                 p->pos = start_offset; /* for better error reporting */
                 return -1;
             }
@@ -195,7 +195,7 @@ static int parse_string_impl(sjson_parser *p, sjson_str *out)
             }
             if ((unsigned char)c < 0x20) {
                 if (used_heap) free(buf);
-                set_error(p, SJSON_INVALID_STRING);
+                set_error(p, JSONLITE_INVALID_STRING);
                 return -1;
             }
 
@@ -204,7 +204,7 @@ static int parse_string_impl(sjson_parser *p, sjson_str *out)
                 c = peek(p);
                 if (c < 0) {
                     if (used_heap) free(buf);
-                    set_error(p, SJSON_UNEXPECTED_END);
+                    set_error(p, JSONLITE_UNEXPECTED_END);
                     return -1;
                 }
 
@@ -220,7 +220,7 @@ static int parse_string_impl(sjson_parser *p, sjson_str *out)
                     }
                     if (!new_buf) {
                         if (used_heap) free(buf);
-                        set_error(p, SJSON_ALLOC_FAILED);
+                        set_error(p, JSONLITE_ALLOC_FAILED);
                         return -1;
                     }
                     buf = new_buf;
@@ -251,13 +251,13 @@ static int parse_string_impl(sjson_parser *p, sjson_str *out)
                         unsigned long full;
                         if (peek(p) != '\\') {
                             if (used_heap) free(buf);
-                            set_error(p, SJSON_INVALID_UNICODE);
+                            set_error(p, JSONLITE_INVALID_UNICODE);
                             return -1;
                         }
                         advance(p);
                         if (peek(p) != 'u') {
                             if (used_heap) free(buf);
-                            set_error(p, SJSON_INVALID_UNICODE);
+                            set_error(p, JSONLITE_INVALID_UNICODE);
                             return -1;
                         }
                         advance(p);
@@ -268,7 +268,7 @@ static int parse_string_impl(sjson_parser *p, sjson_str *out)
                         }
                         if (lo < 0xDC00 || lo > 0xDFFF) {
                             if (used_heap) free(buf);
-                            set_error(p, SJSON_INVALID_UNICODE);
+                            set_error(p, JSONLITE_INVALID_UNICODE);
                             return -1;
                         }
                         full = (unsigned long)(0x10000 +
@@ -278,7 +278,7 @@ static int parse_string_impl(sjson_parser *p, sjson_str *out)
                     } else if (cp >= 0xDC00 && cp <= 0xDFFF) {
                         /* lone low surrogate */
                         if (used_heap) free(buf);
-                        set_error(p, SJSON_INVALID_UNICODE);
+                        set_error(p, JSONLITE_INVALID_UNICODE);
                         return -1;
                     } else {
                         buf_len += (size_t)encode_utf8((unsigned long)cp,
@@ -288,7 +288,7 @@ static int parse_string_impl(sjson_parser *p, sjson_str *out)
                 }
                 default:
                     if (used_heap) free(buf);
-                    set_error(p, SJSON_INVALID_STRING);
+                    set_error(p, JSONLITE_INVALID_STRING);
                     return -1;
                 }
             } else {
@@ -304,7 +304,7 @@ static int parse_string_impl(sjson_parser *p, sjson_str *out)
                     }
                     if (!new_buf) {
                         if (used_heap) free(buf);
-                        set_error(p, SJSON_ALLOC_FAILED);
+                        set_error(p, JSONLITE_ALLOC_FAILED);
                         return -1;
                     }
                     buf = new_buf;
@@ -332,35 +332,35 @@ static int parse_string_impl(sjson_parser *p, sjson_str *out)
 
 /* ---------- parse_number ---------- */
 
-static int parse_number(sjson_parser *p)
+static int parse_number(jsonlite_parser *p)
 {
     size_t start = p->pos;
     char num_buf[64];
     size_t num_len;
     char *endptr;
     double val;
-    sjson_event ev;
+    jsonlite_event ev;
 
     /* optional minus */
     if (peek(p) == '-') advance(p);
 
     /* integer part */
     if (peek(p) < 0) {
-        set_error(p, SJSON_UNEXPECTED_END);
+        set_error(p, JSONLITE_UNEXPECTED_END);
         return -1;
     }
     if (peek(p) == '0') {
         advance(p);
         /* no leading zeros: next must not be digit */
         if (peek(p) >= '0' && peek(p) <= '9') {
-            set_error(p, SJSON_INVALID_NUMBER);
+            set_error(p, JSONLITE_INVALID_NUMBER);
             return -1;
         }
     } else if (peek(p) >= '1' && peek(p) <= '9') {
         advance(p);
         while (peek(p) >= '0' && peek(p) <= '9') advance(p);
     } else {
-        set_error(p, SJSON_INVALID_NUMBER);
+        set_error(p, JSONLITE_INVALID_NUMBER);
         return -1;
     }
 
@@ -368,7 +368,7 @@ static int parse_number(sjson_parser *p)
     if (peek(p) == '.') {
         advance(p);
         if (peek(p) < '0' || peek(p) > '9') {
-            set_error(p, SJSON_INVALID_NUMBER);
+            set_error(p, JSONLITE_INVALID_NUMBER);
             return -1;
         }
         while (peek(p) >= '0' && peek(p) <= '9') advance(p);
@@ -379,7 +379,7 @@ static int parse_number(sjson_parser *p)
         advance(p);
         if (peek(p) == '+' || peek(p) == '-') advance(p);
         if (peek(p) < '0' || peek(p) > '9') {
-            set_error(p, SJSON_INVALID_NUMBER);
+            set_error(p, JSONLITE_INVALID_NUMBER);
             return -1;
         }
         while (peek(p) >= '0' && peek(p) <= '9') advance(p);
@@ -387,7 +387,7 @@ static int parse_number(sjson_parser *p)
 
     num_len = p->pos - start;
     if (num_len >= sizeof(num_buf)) {
-        set_error(p, SJSON_INVALID_NUMBER);
+        set_error(p, JSONLITE_INVALID_NUMBER);
         return -1;
     }
     memcpy(num_buf, p->json + start, num_len);
@@ -395,11 +395,11 @@ static int parse_number(sjson_parser *p)
 
     val = strtod(num_buf, &endptr);
     if (endptr != num_buf + num_len) {
-        set_error(p, SJSON_INVALID_NUMBER);
+        set_error(p, JSONLITE_INVALID_NUMBER);
         return -1;
     }
 
-    ev.type = SJSON_EVENT_NUMBER;
+    ev.type = JSONLITE_EVENT_NUMBER;
     ev.value.number = val;
     ev.depth = p->depth;
     ev.offset = start;
@@ -408,13 +408,13 @@ static int parse_number(sjson_parser *p)
 
 /* ---------- parse_literal ---------- */
 
-static int parse_literal(sjson_parser *p)
+static int parse_literal(jsonlite_parser *p)
 {
     size_t start = p->pos;
-    sjson_event ev;
+    jsonlite_event ev;
 
     if (p->len - p->pos >= 4 && memcmp(p->json + p->pos, "true", 4) == 0) {
-        ev.type = SJSON_EVENT_BOOL;
+        ev.type = JSONLITE_EVENT_BOOL;
         ev.value.boolean = 1;
         ev.depth = p->depth;
         ev.offset = start;
@@ -422,7 +422,7 @@ static int parse_literal(sjson_parser *p)
         return emit(p, &ev);
     }
     if (p->len - p->pos >= 5 && memcmp(p->json + p->pos, "false", 5) == 0) {
-        ev.type = SJSON_EVENT_BOOL;
+        ev.type = JSONLITE_EVENT_BOOL;
         ev.value.boolean = 0;
         ev.depth = p->depth;
         ev.offset = start;
@@ -430,23 +430,23 @@ static int parse_literal(sjson_parser *p)
         return emit(p, &ev);
     }
     if (p->len - p->pos >= 4 && memcmp(p->json + p->pos, "null", 4) == 0) {
-        ev.type = SJSON_EVENT_NULL;
+        ev.type = JSONLITE_EVENT_NULL;
         ev.depth = p->depth;
         ev.offset = start;
         p->pos += 4; p->col += 4;
         return emit(p, &ev);
     }
 
-    set_error(p, SJSON_INVALID_LITERAL);
+    set_error(p, JSONLITE_INVALID_LITERAL);
     return -1;
 }
 
 /* ---------- parse_string (event-emitting wrappers) ---------- */
 
-static int parse_string_event(sjson_parser *p, sjson_event_type type)
+static int parse_string_event(jsonlite_parser *p, jsonlite_event_type type)
 {
-    sjson_str str;
-    sjson_event ev;
+    jsonlite_str str;
+    jsonlite_event ev;
     size_t start = p->pos;
     if (parse_string_impl(p, &str) != 0) return -1;
     ev.type = type;
@@ -458,17 +458,17 @@ static int parse_string_event(sjson_parser *p, sjson_event_type type)
 
 /* ---------- parse_object ---------- */
 
-static int parse_object(sjson_parser *p)
+static int parse_object(jsonlite_parser *p)
 {
-    sjson_event ev;
+    jsonlite_event ev;
     int first = 1;
 
-    if (p->depth >= SJSON_MAX_DEPTH) {
-        set_error(p, SJSON_DEPTH_EXCEEDED);
+    if (p->depth >= JSONLITE_MAX_DEPTH) {
+        set_error(p, JSONLITE_DEPTH_EXCEEDED);
         return -1;
     }
 
-    ev.type = SJSON_EVENT_OBJECT_START;
+    ev.type = JSONLITE_EVENT_OBJECT_START;
     ev.depth = p->depth;
     ev.offset = p->pos;
     memset(&ev.value, 0, sizeof(ev.value));
@@ -481,7 +481,7 @@ static int parse_object(sjson_parser *p)
     if (peek(p) == '}') {
         advance(p);
         p->depth--;
-        ev.type = SJSON_EVENT_OBJECT_END;
+        ev.type = JSONLITE_EVENT_OBJECT_END;
         ev.depth = p->depth;
         ev.offset = p->pos - 1;
         return emit(p, &ev);
@@ -497,14 +497,14 @@ static int parse_object(sjson_parser *p)
 
         skip_whitespace(p);
         if (peek(p) != '"') {
-            set_error(p, SJSON_UNEXPECTED_CHAR);
+            set_error(p, JSONLITE_UNEXPECTED_CHAR);
             return -1;
         }
-        if (parse_string_event(p, SJSON_EVENT_KEY) != 0) return -1;
+        if (parse_string_event(p, JSONLITE_EVENT_KEY) != 0) return -1;
 
         skip_whitespace(p);
         if (peek(p) != ':') {
-            set_error(p, SJSON_UNEXPECTED_CHAR);
+            set_error(p, JSONLITE_UNEXPECTED_CHAR);
             return -1;
         }
         advance(p); /* consume ':' */
@@ -514,13 +514,13 @@ static int parse_object(sjson_parser *p)
     }
 
     if (peek(p) != '}') {
-        set_error(p, SJSON_UNEXPECTED_CHAR);
+        set_error(p, JSONLITE_UNEXPECTED_CHAR);
         return -1;
     }
     advance(p);
     p->depth--;
 
-    ev.type = SJSON_EVENT_OBJECT_END;
+    ev.type = JSONLITE_EVENT_OBJECT_END;
     ev.depth = p->depth;
     ev.offset = p->pos - 1;
     return emit(p, &ev);
@@ -528,17 +528,17 @@ static int parse_object(sjson_parser *p)
 
 /* ---------- parse_array ---------- */
 
-static int parse_array(sjson_parser *p)
+static int parse_array(jsonlite_parser *p)
 {
-    sjson_event ev;
+    jsonlite_event ev;
     int first = 1;
 
-    if (p->depth >= SJSON_MAX_DEPTH) {
-        set_error(p, SJSON_DEPTH_EXCEEDED);
+    if (p->depth >= JSONLITE_MAX_DEPTH) {
+        set_error(p, JSONLITE_DEPTH_EXCEEDED);
         return -1;
     }
 
-    ev.type = SJSON_EVENT_ARRAY_START;
+    ev.type = JSONLITE_EVENT_ARRAY_START;
     ev.depth = p->depth;
     ev.offset = p->pos;
     memset(&ev.value, 0, sizeof(ev.value));
@@ -551,7 +551,7 @@ static int parse_array(sjson_parser *p)
     if (peek(p) == ']') {
         advance(p);
         p->depth--;
-        ev.type = SJSON_EVENT_ARRAY_END;
+        ev.type = JSONLITE_EVENT_ARRAY_END;
         ev.depth = p->depth;
         ev.offset = p->pos - 1;
         return emit(p, &ev);
@@ -570,13 +570,13 @@ static int parse_array(sjson_parser *p)
     }
 
     if (peek(p) != ']') {
-        set_error(p, SJSON_UNEXPECTED_CHAR);
+        set_error(p, JSONLITE_UNEXPECTED_CHAR);
         return -1;
     }
     advance(p);
     p->depth--;
 
-    ev.type = SJSON_EVENT_ARRAY_END;
+    ev.type = JSONLITE_EVENT_ARRAY_END;
     ev.depth = p->depth;
     ev.offset = p->pos - 1;
     return emit(p, &ev);
@@ -584,34 +584,34 @@ static int parse_array(sjson_parser *p)
 
 /* ---------- parse_value ---------- */
 
-static int parse_value(sjson_parser *p)
+static int parse_value(jsonlite_parser *p)
 {
     int c = peek(p);
     if (c < 0) {
-        set_error(p, SJSON_UNEXPECTED_END);
+        set_error(p, JSONLITE_UNEXPECTED_END);
         return -1;
     }
     switch (c) {
     case '{': return parse_object(p);
     case '[': return parse_array(p);
-    case '"': return parse_string_event(p, SJSON_EVENT_STRING);
+    case '"': return parse_string_event(p, JSONLITE_EVENT_STRING);
     case 't': case 'f': case 'n':
         return parse_literal(p);
     case '-':
         return parse_number(p);
     default:
         if (c >= '0' && c <= '9') return parse_number(p);
-        set_error(p, SJSON_UNEXPECTED_CHAR);
+        set_error(p, JSONLITE_UNEXPECTED_CHAR);
         return -1;
     }
 }
 
 /* ---------- public API ---------- */
 
-sjson_result sjson_parse(const char *json, size_t len,
-                         sjson_callback cb, void *user_data)
+jsonlite_result jsonlite_parse(const char *json, size_t len,
+                         jsonlite_callback cb, void *user_data)
 {
-    sjson_parser p;
+    jsonlite_parser p;
     memset(&p, 0, sizeof(p));
     p.json = json;
     p.len = len;
@@ -622,11 +622,11 @@ sjson_result sjson_parse(const char *json, size_t len,
     p.cb = cb;
     p.user_data = user_data;
     p.heap_buf = NULL;
-    p.result.error = SJSON_OK;
+    p.result.error = JSONLITE_OK;
 
     skip_whitespace(&p);
     if (peek(&p) < 0) {
-        set_error(&p, SJSON_UNEXPECTED_END);
+        set_error(&p, JSONLITE_UNEXPECTED_END);
         free(p.heap_buf);
         return p.result;
     }
@@ -638,27 +638,27 @@ sjson_result sjson_parse(const char *json, size_t len,
 
     skip_whitespace(&p);
     if (peek(&p) >= 0) {
-        set_error(&p, SJSON_TRAILING_CONTENT);
+        set_error(&p, JSONLITE_TRAILING_CONTENT);
     }
 
     free(p.heap_buf);
     return p.result;
 }
 
-const char *sjson_error_str(sjson_error err)
+const char *jsonlite_error_str(jsonlite_error err)
 {
     switch (err) {
-    case SJSON_OK:               return "ok";
-    case SJSON_UNEXPECTED_CHAR:  return "unexpected character";
-    case SJSON_UNEXPECTED_END:   return "unexpected end of input";
-    case SJSON_INVALID_STRING:   return "invalid string";
-    case SJSON_INVALID_NUMBER:   return "invalid number";
-    case SJSON_INVALID_LITERAL:  return "invalid literal";
-    case SJSON_TRAILING_CONTENT: return "trailing content after value";
-    case SJSON_DEPTH_EXCEEDED:   return "maximum nesting depth exceeded";
-    case SJSON_INVALID_UNICODE:  return "invalid unicode escape";
-    case SJSON_ALLOC_FAILED:     return "memory allocation failed";
-    case SJSON_ABORTED:          return "parsing aborted by callback";
+    case JSONLITE_OK:               return "ok";
+    case JSONLITE_UNEXPECTED_CHAR:  return "unexpected character";
+    case JSONLITE_UNEXPECTED_END:   return "unexpected end of input";
+    case JSONLITE_INVALID_STRING:   return "invalid string";
+    case JSONLITE_INVALID_NUMBER:   return "invalid number";
+    case JSONLITE_INVALID_LITERAL:  return "invalid literal";
+    case JSONLITE_TRAILING_CONTENT: return "trailing content after value";
+    case JSONLITE_DEPTH_EXCEEDED:   return "maximum nesting depth exceeded";
+    case JSONLITE_INVALID_UNICODE:  return "invalid unicode escape";
+    case JSONLITE_ALLOC_FAILED:     return "memory allocation failed";
+    case JSONLITE_ABORTED:          return "parsing aborted by callback";
     }
     return "unknown error";
 }

@@ -1,31 +1,31 @@
 /*
- * example.c — test/demo for sjson SAX-style JSON parser
+ * example.c — test/demo for jsonlite SAX-style JSON parser
  */
 
-#include "sjson.h"
+#include "jsonlite.h"
 
 #include <stdio.h>
 #include <string.h>
 
 /* ---------- print callback ---------- */
 
-static const char *event_name(sjson_event_type type)
+static const char *event_name(jsonlite_event_type type)
 {
     switch (type) {
-    case SJSON_EVENT_OBJECT_START: return "OBJECT_START";
-    case SJSON_EVENT_OBJECT_END:   return "OBJECT_END";
-    case SJSON_EVENT_ARRAY_START:  return "ARRAY_START";
-    case SJSON_EVENT_ARRAY_END:    return "ARRAY_END";
-    case SJSON_EVENT_KEY:          return "KEY";
-    case SJSON_EVENT_STRING:       return "STRING";
-    case SJSON_EVENT_NUMBER:       return "NUMBER";
-    case SJSON_EVENT_BOOL:         return "BOOL";
-    case SJSON_EVENT_NULL:         return "NULL";
+    case JSONLITE_EVENT_OBJECT_START: return "OBJECT_START";
+    case JSONLITE_EVENT_OBJECT_END:   return "OBJECT_END";
+    case JSONLITE_EVENT_ARRAY_START:  return "ARRAY_START";
+    case JSONLITE_EVENT_ARRAY_END:    return "ARRAY_END";
+    case JSONLITE_EVENT_KEY:          return "KEY";
+    case JSONLITE_EVENT_STRING:       return "STRING";
+    case JSONLITE_EVENT_NUMBER:       return "NUMBER";
+    case JSONLITE_EVENT_BOOL:         return "BOOL";
+    case JSONLITE_EVENT_NULL:         return "NULL";
     }
     return "???";
 }
 
-static int print_callback(const sjson_event *ev, void *user_data)
+static int print_callback(const jsonlite_event *ev, void *user_data)
 {
     int i;
     int indent = ev->depth;
@@ -35,14 +35,14 @@ static int print_callback(const sjson_event *ev, void *user_data)
     printf("%-14s", event_name(ev->type));
 
     switch (ev->type) {
-    case SJSON_EVENT_KEY:
-    case SJSON_EVENT_STRING:
+    case JSONLITE_EVENT_KEY:
+    case JSONLITE_EVENT_STRING:
         printf(" \"%.*s\"", (int)ev->value.str.len, ev->value.str.ptr);
         break;
-    case SJSON_EVENT_NUMBER:
+    case JSONLITE_EVENT_NUMBER:
         printf(" %g", ev->value.number);
         break;
-    case SJSON_EVENT_BOOL:
+    case JSONLITE_EVENT_BOOL:
         printf(" %s", ev->value.boolean ? "true" : "false");
         break;
     default:
@@ -55,7 +55,7 @@ static int print_callback(const sjson_event *ev, void *user_data)
 
 /* ---------- abort callback (stops after 3 events) ---------- */
 
-static int abort_callback(const sjson_event *ev, void *user_data)
+static int abort_callback(const jsonlite_event *ev, void *user_data)
 {
     int *count = (int *)user_data;
     (void)ev;
@@ -67,15 +67,15 @@ static int abort_callback(const sjson_event *ev, void *user_data)
 /* ---------- test runner ---------- */
 
 static void run_test(const char *label, const char *json, size_t len,
-                     sjson_callback cb, void *user_data)
+                     jsonlite_callback cb, void *user_data)
 {
-    sjson_result r;
+    jsonlite_result r;
     printf("=== %s ===\n", label);
     if (len == 0 && json) len = strlen(json);
-    r = sjson_parse(json, len, cb, user_data);
-    if (r.error != SJSON_OK) {
+    r = jsonlite_parse(json, len, cb, user_data);
+    if (r.error != JSONLITE_OK) {
         printf("  ERROR: %s at offset %zu (line %zu, col %zu)\n",
-               sjson_error_str(r.error), r.offset, r.line, r.column);
+               jsonlite_error_str(r.error), r.offset, r.line, r.column);
     } else {
         printf("  OK\n");
     }

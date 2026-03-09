@@ -2,19 +2,23 @@ CC      = gcc
 CFLAGS  = -Wall -Wextra -Wpedantic -std=c99 -O2
 AR      = ar
 ARFLAGS = rcs
+BUILD   = .build
 
-all: libsjson.a example
+all: ${BUILD}/libjsonlite.a ${BUILD}/example
 
-libsjson.a: sjson.o
+${BUILD}/libjsonlite.a: ${BUILD}/jsonlite.o | ${BUILD}
 	$(AR) $(ARFLAGS) $@ $^
 
-sjson.o: sjson.c sjson.h
-	$(CC) $(CFLAGS) -c -o $@ sjson.c
+${BUILD}/jsonlite.o: jsonlite.c jsonlite.h | ${BUILD}
+	$(CC) $(CFLAGS) -c -o $@ jsonlite.c
 
-example: example.c libsjson.a sjson.h
-	$(CC) $(CFLAGS) -o $@ example.c -L. -lsjson
+${BUILD}/example: example.c ${BUILD}/libjsonlite.a jsonlite.h | ${BUILD}
+	$(CC) $(CFLAGS) -o $@ example.c -L${BUILD} -ljsonlite
+
+${BUILD}:
+	mkdir -p ${BUILD}
 
 clean:
-	rm -f sjson.o libsjson.a example
+	rm -f ${BUILD}
 
 .PHONY: all clean
