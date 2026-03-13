@@ -17,6 +17,7 @@ func main() {
 	items := []string{"apple", "banana", "cherry", "date", "elderberry", "fig", "grape", "honeydew", "kiwi", "lemon"}
 	query := ""
 	selectedIndex := 0
+	selectedItem := ""
 
 	// Set terminal to raw mode
 	fd := int(os.Stdin.Fd())
@@ -38,13 +39,18 @@ func main() {
 			}
 		}
 
-		// Keep selection within bounds
-		if len(filtered) == 0 {
-			selectedIndex = 0
-		} else if selectedIndex >= len(filtered) {
-			selectedIndex = len(filtered) - 1
-		} else if selectedIndex < 0 {
-			selectedIndex = 0
+		// Preserve selected item across query changes; fall back to top
+		selectedIndex = 0
+		for i, item := range filtered {
+			if item == selectedItem {
+				selectedIndex = i
+				break
+			}
+		}
+		if len(filtered) > 0 {
+			selectedItem = filtered[selectedIndex]
+		} else {
+			selectedItem = ""
 		}
 
 		// 3. Render UI (Bottom-up)
@@ -100,12 +106,10 @@ func main() {
 			case 127: // Backspace
 				if len(query) > 0 {
 					query = query[:len(query)-1]
-					selectedIndex = 0
 				}
 			default:
 				if char >= 32 && char <= 126 {
 					query += string(char)
-					selectedIndex = 0
 				}
 			}
 		} else if n == 3 && buf[0] == 27 && buf[1] == 91 {
@@ -113,10 +117,12 @@ func main() {
 			case 65: // Up Arrow
 				if selectedIndex > 0 {
 					selectedIndex--
+					selectedItem = filtered[selectedIndex]
 				}
 			case 66: // Down Arrow
 				if selectedIndex < len(filtered)-1 {
 					selectedIndex++
+					selectedItem = filtered[selectedIndex]
 				}
 			}
 		}
