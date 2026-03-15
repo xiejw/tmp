@@ -63,9 +63,9 @@ typedef struct {
 } jsonlite_str;
 
 typedef union {
-    jsonlite_str str;    /* KEY, STRING */
-    double    number; /* NUMBER */
-    int       boolean;/* BOOL */
+    jsonlite_str str;     /* KEY, STRING */
+    double       number;  /* NUMBER */
+    int          boolean; /* BOOL */
 } jsonlite_value;
 
 /* ---------- event ---------- */
@@ -73,30 +73,31 @@ typedef union {
 typedef struct {
     jsonlite_event_type type;
     jsonlite_value      value;
-    int              depth;
-    size_t           offset; /* byte offset in input */
+    int                 depth;
+    size_t              offset; /* byte offset in input */
 } jsonlite_event;
 
 /* ---------- callback ---------- */
 
 /* Return 0 to continue parsing, non-zero to abort. */
-typedef int (*jsonlite_callback)(const jsonlite_event *event, void *user_data);
+typedef int ( *jsonlite_callback )( const jsonlite_event *event,
+                                    void                 *user_data );
 
 /* ---------- result ---------- */
 
 typedef struct {
     jsonlite_error error;
-    size_t      offset;
-    size_t      line;
-    size_t      column;
+    size_t         offset;
+    size_t         line;
+    size_t         column;
 } jsonlite_result;
 
 /* ---------- API ---------- */
 
-jsonlite_result jsonlite_parse(const char *json, size_t len,
-                         jsonlite_callback cb, void *user_data);
+jsonlite_result jsonlite_parse( const char *json, size_t len,
+                                jsonlite_callback cb, void *user_data );
 
-const char *jsonlite_error_str(jsonlite_error err);
+const char *jsonlite_error_str( jsonlite_error err );
 
 #ifdef __cplusplus
 }

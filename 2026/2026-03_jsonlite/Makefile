@@ -22,3 +22,6 @@ clean:
 	rm -f ${BUILD}
 
 .PHONY: all clean
+
+fmt:
+	~/Workspace/y/tools/scripts/clang_format_all.sh .
