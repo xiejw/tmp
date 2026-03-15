@@ -1,0 +1,12 @@
+output {
+  type:     string
+  required: true
+}
+count {
+  type:          int
+  default_value: 1
+}
+threshold {
+  type:          long
+  default_value: 0
+}
