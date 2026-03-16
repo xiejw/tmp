@@ -26,6 +26,11 @@ This codebase uses a C++11-like style that leans heavily toward C:
 - **Free functions**: if the class methods is complicated, define helper methods
   as free functions taking arguments as explicit inputs so it is super clear
   dependencies.
+- **Magic Numbers**: Never use bare numeric or string literals for meaningful
+  constants. Define them with `#define` in a clearly marked section at the top
+  of the relevant `.cc` or `.h` file, using `ALL_CAPS` names, before any
+  function definitions. Add a short comment on each line explaining the
+  constant's role when the name alone isn't self-evident.
 
 ---
 

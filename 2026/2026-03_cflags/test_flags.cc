@@ -7,68 +7,81 @@
 
 namespace forge {
 
-void FlagsInit(Flags *flags) {
-  flags->output = ""; flags->output_set = false;
-  flags->count = 1; flags->count_set = false;
-  flags->threshold = 0L; flags->threshold_set = false;
+void
+FlagsInit( Flags *flags )
+{
+    flags->output        = "";
+    flags->output_set    = false;
+    flags->count         = 1;
+    flags->count_set     = false;
+    flags->threshold     = 0L;
+    flags->threshold_set = false;
 }
 
-bool FlagsParse(Flags *flags, int argc, char **argv, std::string *err_msg) {
-  for (int i = 1; i < argc; i++) {
-    if (strcmp(argv[i], "--output") == 0) {
-      if (i + 1 >= argc) {
-        *err_msg = std::string("flag --output requires a value");
-        return true;
-      }
-      flags->output = argv[++i];
-      flags->output_set = true;
-    } else if (strcmp(argv[i], "--count") == 0) {
-      if (i + 1 >= argc) {
-        *err_msg = std::string("flag --count requires a value");
-        return true;
-      }
-      char *end_count;
-      long val_count = strtol(argv[i + 1], &end_count, 10);
-      if (*end_count != '\0') {
-        *err_msg = std::string("flag --count: invalid int: ") + argv[i + 1];
-        return true;
-      }
-      if (val_count < -2147483648L || val_count > 2147483647L) {
-        *err_msg = std::string("flag --count: value out of int range: ") + argv[i + 1];
-        return true;
-      }
-      flags->count = (int)val_count;
-      flags->count_set = true;
-      i++;
-    } else if (strcmp(argv[i], "--threshold") == 0) {
-      if (i + 1 >= argc) {
-        *err_msg = std::string("flag --threshold requires a value");
-        return true;
-      }
-      char *end_threshold;
-      errno = 0;
-      long val_threshold = strtol(argv[i + 1], &end_threshold, 10);
-      if (*end_threshold != '\0' || errno != 0) {
-        *err_msg = std::string("flag --threshold: invalid long: ") + argv[i + 1];
-        return true;
-      }
-      flags->threshold = val_threshold;
-      flags->threshold_set = true;
-      i++;
-    } else {
-      *err_msg = std::string("unknown flag: ") + argv[i];
-      return true;
+bool
+FlagsParse( Flags *flags, int argc, char **argv, std::string *err_msg )
+{
+    for ( int i = 1; i < argc; i++ ) {
+        if ( strcmp( argv[i], "--output" ) == 0 ) {
+            if ( i + 1 >= argc ) {
+                *err_msg = std::string( "flag --output requires a value" );
+                return true;
+            }
+            flags->output     = argv[++i];
+            flags->output_set = true;
+        } else if ( strcmp( argv[i], "--count" ) == 0 ) {
+            if ( i + 1 >= argc ) {
+                *err_msg = std::string( "flag --count requires a value" );
+                return true;
+            }
+            char *end_count;
+            long  val_count = strtol( argv[i + 1], &end_count, 10 );
+            if ( *end_count != '\0' ) {
+                *err_msg =
+                    std::string( "flag --count: invalid int: " ) + argv[i + 1];
+                return true;
+            }
+            if ( val_count < -2147483648L || val_count > 2147483647L ) {
+                *err_msg =
+                    std::string( "flag --count: value out of int range: " ) +
+                    argv[i + 1];
+                return true;
+            }
+            flags->count     = (int)val_count;
+            flags->count_set = true;
+            i++;
+        } else if ( strcmp( argv[i], "--threshold" ) == 0 ) {
+            if ( i + 1 >= argc ) {
+                *err_msg = std::string( "flag --threshold requires a value" );
+                return true;
+            }
+            char *end_threshold;
+            errno              = 0;
+            long val_threshold = strtol( argv[i + 1], &end_threshold, 10 );
+            if ( *end_threshold != '\0' || errno != 0 ) {
+                *err_msg = std::string( "flag --threshold: invalid long: " ) +
+                           argv[i + 1];
+                return true;
+            }
+            flags->threshold     = val_threshold;
+            flags->threshold_set = true;
+            i++;
+        } else {
+            *err_msg = std::string( "unknown flag: " ) + argv[i];
+            return true;
+        }
     }
-  }
-  return false;
+    return false;
 }
 
-bool FlagsValidate(const Flags *flags, std::string *err_msg) {
-  if (!flags->output_set) {
-    *err_msg = "required flag --output not provided";
-    return true;
-  }
-  return false;
+bool
+FlagsValidate( const Flags *flags, std::string *err_msg )
+{
+    if ( !flags->output_set ) {
+        *err_msg = "required flag --output not provided";
+        return true;
+    }
+    return false;
 }
 
-} // namespace forge
+}  // namespace forge
