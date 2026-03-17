@@ -2,13 +2,20 @@ CC      = gcc
 CFLAGS  = -Wall -Wextra -std=c11
 LDFLAGS = -lpthread
 
-TARGET  = main
+BUILD   = .build
+TARGET  = ${BUILD}/main
 SRCS    = main.c status.c
 
-$(TARGET): $(SRCS) status.h
+run: ${TARGET}
+	$^
+
+$(TARGET): $(SRCS) status.h | ${BUILD}
 	$(CC) $(CFLAGS) $(SRCS) $(LDFLAGS) -o $(TARGET)
 
 clean:
-	rm -f $(TARGET)
+	rm -rf $(BUILD)
+
+${BUILD}:
+	@mkdir -p ${BUILD}
 
 .PHONY: clean
