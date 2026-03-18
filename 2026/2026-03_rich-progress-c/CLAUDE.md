@@ -26,9 +26,14 @@ Bar width = `term_cols - title_len - 1 - 2(brackets) - 1 - right_len`
 
 ## Key Design Decisions
 
-**No background thread.** The bar is redrawn synchronously on each
-`forge_progress_bar_advance()` call. This keeps the implementation simple and
-puts the caller in full control of redraw frequency.
+**Background thread redraws every 200 ms.** A POSIX thread (`pthread`) started
+in `forge_progress_bar_open()` calls `render_bar()` under `s_mutex` at 200 ms
+intervals. This keeps the display live even when `advance()` is called
+infrequently. `forge_progress_bar_close()` sets `s_running = 0` and joins the
+thread before final rendering.
+
+**`advance()` also redraws immediately** (under the mutex), so fast callers get
+instant feedback without waiting for the background tick.
 
 **Absolute position, not delta.** `advance(current)` takes the current absolute
 count. This avoids accumulated drift and lets callers call it as often as they
@@ -36,8 +41,13 @@ like (e.g., every N items) without bookkeeping.
 
 **Terminal width via `ioctl(TIOCGWINSZ)`**, fallback to 80 columns.
 
-**ETA formula:** `eta = elapsed * (total - current) / current`
-ETA is suppressed at `current == 0` (division by zero / meaningless).
+**ETA — sliding-window moving average (MA_SIZE=16).** Each `advance()` call
+pushes a `{timestamp, count}` sample into a ring buffer. When ≥ 2 samples exist:
+- `rate = (newest.count − oldest.count) / (newest.t − oldest.t)`
+- `eta  = (total − current) / rate`
+
+Falls back to `elapsed * (1−pct) / pct` until 2 samples are available.
+ETA is suppressed at `current == 0`.
 
 **ETA unit scaling** (`fmt_eta` helper):
 | Range        | Display |
@@ -46,8 +56,9 @@ ETA is suppressed at `current == 0` (division by zero / meaningless).
 | < 3600 s    | `"2m"`  |
 | >= 3600 s   | `"1h"`  |
 
-**`forge_progress_bar_close()`** calls `advance(total)` to render the final
-100% state, then emits a newline so subsequent output starts cleanly.
+**`forge_progress_bar_close()`** stops the background thread and renders at
+`s_current` (the last position passed to `advance()`), then emits a newline.
+It does **not** force 100% — if the caller stops early, the bar reflects that.
 
 ## Tuning
 

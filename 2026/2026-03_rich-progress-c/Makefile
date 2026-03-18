@@ -9,7 +9,7 @@ run: ${TARGET}
 	$^
 
 $(TARGET): $(SRCS) progress.h | ${BUILD}
-	$(CC) $(CFLAGS) $(SRCS) -o $(TARGET)
+	$(CC) $(CFLAGS) $(SRCS) -o $(TARGET) -lpthread
 
 clean:
 	rm -rf $(BUILD)
