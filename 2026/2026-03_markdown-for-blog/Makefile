@@ -1,25 +1,18 @@
-CC     = gcc
-CFLAGS = -Wall -Wextra -Wpedantic -std=c99 -O2
-BUILD  = .build
-TARGET = $(BUILD)/md2html
-TEST   = $(BUILD)/test
-SRCS   = main.c md2html.c
+BIN = .build/md2html
 
-all: $(TARGET)
+compile:
+	mkdir -p .build
+	go build -o $(BIN) ./cmd/...
 
-$(TARGET): $(SRCS) md2html.h | $(BUILD)
-	$(CC) $(CFLAGS) -o $@ $(SRCS)
+release: compile
 
-$(TEST): test.c md2html.c md2html.h | $(BUILD)
-	$(CC) $(CFLAGS) -D_POSIX_C_SOURCE=200809L -o $@ test.c md2html.c
+test:
+	go test ./src/...
 
-test: $(TEST)
-	$(TEST)
-
-$(BUILD):
-	mkdir -p $(BUILD)
+fmt:
+	go fmt md2html/...
 
 clean:
-	rm -rf $(BUILD)
+	rm -rf .build
 
-.PHONY: all test clean
+.PHONY: compile release test fmt clean
