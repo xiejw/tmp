@@ -3,6 +3,7 @@ package md2html
 import (
 	"bytes"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -138,6 +139,148 @@ func TestTable(t *testing.T) {
 	want := "<table>\n<thead>\n<tr><th>A</th><th>B</th></tr>\n</thead>\n" +
 		"<tbody>\n<tr><td>1</td><td>2</td></tr>\n</tbody>\n</table>\n"
 	check(t, mdToString(t, md), want)
+}
+
+// === --- AST tests ------------------------------------------------------ ===
+
+// mustParseLines is a test helper that parses markdown lines into an AST.
+func mustParseLines(t *testing.T, md string) []Node {
+	t.Helper()
+	return ParseLines(strings.Split(md, "\n"))
+}
+
+func TestASTHeading(t *testing.T) {
+	nodes := mustParseLines(t, "# Hello")
+	if len(nodes) != 1 {
+		t.Fatalf("want 1 node, got %d", len(nodes))
+	}
+	h, ok := nodes[0].(HeadingNode)
+	if !ok {
+		t.Fatalf("want HeadingNode, got %T", nodes[0])
+	}
+	if h.Level != 1 {
+		t.Errorf("want level 1, got %d", h.Level)
+	}
+	if len(h.Content) != 1 {
+		t.Fatalf("want 1 inline node, got %d", len(h.Content))
+	}
+	tn, ok := h.Content[0].(TextNode)
+	if !ok {
+		t.Fatalf("want TextNode, got %T", h.Content[0])
+	}
+	if tn.Text != "Hello" {
+		t.Errorf("want %q, got %q", "Hello", tn.Text)
+	}
+}
+
+func TestASTLink(t *testing.T) {
+	nodes := mustParseLines(t, "[Go](https://go.dev)")
+	if len(nodes) != 1 {
+		t.Fatalf("want 1 node, got %d", len(nodes))
+	}
+	p, ok := nodes[0].(ParagraphNode)
+	if !ok {
+		t.Fatalf("want ParagraphNode, got %T", nodes[0])
+	}
+	if len(p.Lines) != 1 || len(p.Lines[0]) != 1 {
+		t.Fatalf("want 1 line with 1 inline node")
+	}
+	ln, ok := p.Lines[0][0].(LinkNode)
+	if !ok {
+		t.Fatalf("want LinkNode, got %T", p.Lines[0][0])
+	}
+	if ln.URL != "https://go.dev" {
+		t.Errorf("want URL %q, got %q", "https://go.dev", ln.URL)
+	}
+}
+
+func TestASTNestedList(t *testing.T) {
+	nodes := mustParseLines(t, "- parent\n  - child")
+	if len(nodes) != 1 {
+		t.Fatalf("want 1 node, got %d", len(nodes))
+	}
+	lst, ok := nodes[0].(*ListNode)
+	if !ok {
+		t.Fatalf("want *ListNode, got %T", nodes[0])
+	}
+	if len(lst.Items) != 1 {
+		t.Fatalf("want 1 item, got %d", len(lst.Items))
+	}
+	if lst.Items[0].Sub == nil {
+		t.Fatal("want nested Sub list, got nil")
+	}
+	if len(lst.Items[0].Sub.Items) != 1 {
+		t.Errorf("want 1 child item, got %d", len(lst.Items[0].Sub.Items))
+	}
+}
+
+func TestASTCodeBlock(t *testing.T) {
+	nodes := mustParseLines(t, "```go\nfmt.Println()\n```")
+	if len(nodes) != 1 {
+		t.Fatalf("want 1 node, got %d", len(nodes))
+	}
+	cb, ok := nodes[0].(CodeBlockNode)
+	if !ok {
+		t.Fatalf("want CodeBlockNode, got %T", nodes[0])
+	}
+	if cb.Lang != "go" {
+		t.Errorf("want lang %q, got %q", "go", cb.Lang)
+	}
+	if len(cb.Lines) != 1 || cb.Lines[0] != "fmt.Println()" {
+		t.Errorf("unexpected code lines: %v", cb.Lines)
+	}
+}
+
+// === --- CLI render tests ----------------------------------------------- ===
+
+func cliToString(t *testing.T, md string) string {
+	t.Helper()
+	nodes := mustParseLines(t, md)
+	var buf bytes.Buffer
+	if err := RenderCLI(nodes, &buf); err != nil {
+		t.Fatal(err)
+	}
+	return buf.String()
+}
+
+func TestCLIHeadingBold(t *testing.T) {
+	out := cliToString(t, "# Hello")
+	if !strings.Contains(out, ansiBold) {
+		t.Error("want bold escape in heading output")
+	}
+	if !strings.Contains(out, "Hello") {
+		t.Error("want heading text in output")
+	}
+}
+
+func TestCLICodeBlock(t *testing.T) {
+	out := cliToString(t, "```\ncode\n```")
+	if !strings.Contains(out, ansiDim) {
+		t.Error("want dim escape in code block output")
+	}
+	if !strings.Contains(out, "code") {
+		t.Error("want code text in output")
+	}
+}
+
+func TestCLILink(t *testing.T) {
+	out := cliToString(t, "[Go](https://go.dev)")
+	if !strings.Contains(out, ansiUnderline) {
+		t.Error("want underline escape for link text")
+	}
+	if !strings.Contains(out, "https://go.dev") {
+		t.Error("want URL in link output")
+	}
+}
+
+func TestCLITable(t *testing.T) {
+	out := cliToString(t, "| A | B |\n|---|---|\n| 1 | 2 |\n")
+	if !strings.Contains(out, "┌") {
+		t.Error("want box-drawing border in table output")
+	}
+	if !strings.Contains(out, "A") || !strings.Contains(out, "1") {
+		t.Error("want cell content in table output")
+	}
 }
 
 // === --- Template wrapping test ----------------------------------------- ===
