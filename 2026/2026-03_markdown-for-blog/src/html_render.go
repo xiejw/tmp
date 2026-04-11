@@ -152,6 +152,14 @@ func (r *htmlRenderer) renderInline(content []InlineNode) {
 		switch n := n.(type) {
 		case TextNode:
 			writeEscaped(r.out, n.Text)
+		case BoldNode:
+			io.WriteString(r.out, "<strong>")
+			r.renderInline(n.Content)
+			io.WriteString(r.out, "</strong>")
+		case ItalicNode:
+			io.WriteString(r.out, "<em>")
+			r.renderInline(n.Content)
+			io.WriteString(r.out, "</em>")
 		case LinkNode:
 			io.WriteString(r.out, `<a href="`)
 			writeEscaped(r.out, n.URL)
@@ -169,6 +177,10 @@ func renderInlineToString(content []InlineNode, sb *strings.Builder) {
 		switch n := n.(type) {
 		case TextNode:
 			sb.WriteString(n.Text)
+		case BoldNode:
+			renderInlineToString(n.Content, sb)
+		case ItalicNode:
+			renderInlineToString(n.Content, sb)
 		case LinkNode:
 			renderInlineToString(n.Text, sb)
 		}

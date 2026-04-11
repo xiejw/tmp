@@ -141,6 +141,34 @@ func TestTable(t *testing.T) {
 	check(t, mdToString(t, md), want)
 }
 
+// === --- Bold / italic tests -------------------------------------------- ===
+
+func TestBoldStar(t *testing.T) {
+	check(t, mdToString(t, "**bold**"), "<p><strong>bold</strong></p>\n")
+}
+
+func TestBoldUnderscore(t *testing.T) {
+	check(t, mdToString(t, "__bold__"), "<p><strong>bold</strong></p>\n")
+}
+
+func TestItalicStar(t *testing.T) {
+	check(t, mdToString(t, "*italic*"), "<p><em>italic</em></p>\n")
+}
+
+func TestItalicUnderscore(t *testing.T) {
+	check(t, mdToString(t, "_italic_"), "<p><em>italic</em></p>\n")
+}
+
+func TestBoldAndItalicMixed(t *testing.T) {
+	check(t, mdToString(t, "**bold** and *italic*"),
+		"<p><strong>bold</strong> and <em>italic</em></p>\n")
+}
+
+func TestBoldContainingItalic(t *testing.T) {
+	check(t, mdToString(t, "**bold and *italic* inside**"),
+		"<p><strong>bold and <em>italic</em> inside</strong></p>\n")
+}
+
 // === --- AST tests ------------------------------------------------------ ===
 
 // mustParseLines is a test helper that parses markdown lines into an AST.

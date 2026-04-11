@@ -18,6 +18,7 @@ func RenderCLI(nodes []Node, out io.Writer) error {
 const (
 	ansiReset     = "\033[0m"
 	ansiBold      = "\033[1m"
+	ansiItalic    = "\033[3m"
 	ansiDim       = "\033[2m"
 	ansiUnderline = "\033[4m"
 	ansiFgCyan    = "\033[36m"
@@ -205,21 +206,18 @@ func (r *cliRenderer) renderTable(n TableNode) error {
 }
 
 // renderInline returns the ANSI-rendered inline content as a string.
-// Plain text is emitted verbatim; links are styled with underline + URL.
 func (r *cliRenderer) renderInline(content []InlineNode) string {
 	var sb strings.Builder
 	for _, n := range content {
 		switch n := n.(type) {
 		case TextNode:
 			sb.WriteString(n.Text)
+		case BoldNode:
+			sb.WriteString(ansiBold + r.renderInline(n.Content) + ansiReset)
+		case ItalicNode:
+			sb.WriteString(ansiItalic + r.renderInline(n.Content) + ansiReset)
 		case LinkNode:
-			var textSb strings.Builder
-			for _, t := range n.Text {
-				if tn, ok := t.(TextNode); ok {
-					textSb.WriteString(tn.Text)
-				}
-			}
-			sb.WriteString(ansiUnderline + textSb.String() + ansiReset)
+			sb.WriteString(ansiUnderline + r.renderInline(n.Text) + ansiReset)
 			sb.WriteString(ansiFgYellow + " (" + n.URL + ")" + ansiReset)
 		}
 	}

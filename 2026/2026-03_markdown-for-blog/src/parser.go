@@ -239,7 +239,11 @@ func (p *parser) parseTable() Node {
 // === --- Inline parser -------------------------------------------------- ===
 
 // parseInline parses an inline markdown string into a slice of InlineNodes.
-// It handles [text](url) links; everything else becomes TextNode fragments.
+// Supported spans (checked in priority order):
+//
+//	**text** or __text__  →  BoldNode
+//	*text*   or _text_    →  ItalicNode
+//	[text](url)           →  LinkNode
 func parseInline(s string) []InlineNode {
 	var result []InlineNode
 	var buf strings.Builder
@@ -252,6 +256,43 @@ func parseInline(s string) []InlineNode {
 	}
 
 	for i := 0; i < len(s); {
+		// Bold: ** (must check before *)
+		if i+1 < len(s) && s[i] == '*' && s[i+1] == '*' {
+			if j := strings.Index(s[i+2:], "**"); j >= 0 {
+				flush()
+				result = append(result, BoldNode{Content: parseInline(s[i+2 : i+2+j])})
+				i += j + 4
+				continue
+			}
+		}
+		// Bold: __ (must check before _)
+		if i+1 < len(s) && s[i] == '_' && s[i+1] == '_' {
+			if j := strings.Index(s[i+2:], "__"); j >= 0 {
+				flush()
+				result = append(result, BoldNode{Content: parseInline(s[i+2 : i+2+j])})
+				i += j + 4
+				continue
+			}
+		}
+		// Italic: *
+		if s[i] == '*' {
+			if j := strings.IndexByte(s[i+1:], '*'); j >= 0 {
+				flush()
+				result = append(result, ItalicNode{Content: parseInline(s[i+1 : i+1+j])})
+				i += j + 2
+				continue
+			}
+		}
+		// Italic: _
+		if s[i] == '_' {
+			if j := strings.IndexByte(s[i+1:], '_'); j >= 0 {
+				flush()
+				result = append(result, ItalicNode{Content: parseInline(s[i+1 : i+1+j])})
+				i += j + 2
+				continue
+			}
+		}
+		// Link: [text](url)
 		if s[i] == '[' {
 			rest := s[i+1:]
 			if j := strings.IndexByte(rest, ']'); j >= 0 {

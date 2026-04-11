@@ -87,3 +87,17 @@ type LinkNode struct {
 }
 
 func (LinkNode) inlineKind() string { return "link" }
+
+// BoldNode holds **text** or __text__.
+type BoldNode struct {
+	Content []InlineNode
+}
+
+func (BoldNode) inlineKind() string { return "bold" }
+
+// ItalicNode holds *text* or _text_.
+type ItalicNode struct {
+	Content []InlineNode
+}
+
+func (ItalicNode) inlineKind() string { return "italic" }
