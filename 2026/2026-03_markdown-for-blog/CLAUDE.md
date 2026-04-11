@@ -64,11 +64,13 @@ Block elements:
 Inline elements:
 - Bold: `**text**` or `__text__` → `<strong>`
 - Italic: `*text*` or `_text_` → `<em>`
-- Links: `[text](url)` → `<a href="url">`
+- Inline links: `[text](url)` → `<a href="url">`
+- Reference links: `[text][id]` resolved via `[id]: url` definitions
 - HTML escaping of `<`, `>`, `&`
 
 Note: bold/italic markers are matched greedily (first closing marker wins).
 `_` inside identifiers (e.g. `foo_bar`) should be written in a code span.
+Using `[text][id]` with an undefined `id` is a parse error.
 
 ## Public API (`src/` package `md2html`)
 

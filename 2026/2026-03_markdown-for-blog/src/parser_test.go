@@ -141,6 +141,30 @@ func TestTable(t *testing.T) {
 	check(t, mdToString(t, md), want)
 }
 
+// === --- Reference link tests ------------------------------------------- ===
+
+func TestRefLink(t *testing.T) {
+	md := "[Go][go]\n\n[go]: https://go.dev\n"
+	check(t, mdToString(t, md), "<p><a href=\"https://go.dev\">Go</a></p>\n")
+}
+
+func TestRefLinkCaseInsensitive(t *testing.T) {
+	md := "[Go][GO]\n\n[go]: https://go.dev\n"
+	check(t, mdToString(t, md), "<p><a href=\"https://go.dev\">Go</a></p>\n")
+}
+
+func TestRefLinkDefNotRendered(t *testing.T) {
+	md := "text\n\n[go]: https://go.dev\n"
+	check(t, mdToString(t, md), "<p>text</p>\n")
+}
+
+func TestRefLinkUndefinedErrors(t *testing.T) {
+	_, err := ParseLines(strings.Split("[A][Missing]", "\n"))
+	if err == nil {
+		t.Fatal("want error for undefined reference, got nil")
+	}
+}
+
 // === --- Bold / italic tests -------------------------------------------- ===
 
 func TestBoldStar(t *testing.T) {
@@ -174,7 +198,11 @@ func TestBoldContainingItalic(t *testing.T) {
 // mustParseLines is a test helper that parses markdown lines into an AST.
 func mustParseLines(t *testing.T, md string) []Node {
 	t.Helper()
-	return ParseLines(strings.Split(md, "\n"))
+	nodes, err := ParseLines(strings.Split(md, "\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return nodes
 }
 
 func TestASTHeading(t *testing.T) {

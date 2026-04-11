@@ -1,6 +1,7 @@
 package md2html
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -25,15 +26,19 @@ func Parse(inputPath string) ([]Node, error) {
 	if len(lines) > 0 && lines[len(lines)-1] == "" {
 		lines = lines[:len(lines)-1]
 	}
-	return ParseLines(lines), nil
+	return ParseLines(lines)
 }
 
 // ParseLines parses a slice of Markdown lines into an AST.
 // It is the pure core of Parse; useful for testing without file I/O.
-func ParseLines(lines []string) []Node {
-	p := &parser{lines: lines}
+// Returns an error if any reference-style link uses an undefined id.
+func ParseLines(lines []string) ([]Node, error) {
+	p := &parser{lines: lines, refs: collectLinkRefs(lines)}
 	p.run()
-	return p.nodes
+	if len(p.errs) > 0 {
+		return nil, errors.New(strings.Join(p.errs, "\n"))
+	}
+	return p.nodes, nil
 }
 
 // Convert is a convenience wrapper: parse + render HTML in one call.
@@ -52,22 +57,31 @@ type parser struct {
 	lines     []string
 	pos       int
 	nodes     []Node
-	paraLines [][]InlineNode // nil when not accumulating a paragraph
+	paraLines [][]InlineNode    // nil when not accumulating a paragraph
+	refs      map[string]string // link reference definitions (lowercase id → url)
+	errs      []string          // accumulated parse errors
 }
 
 func (p *parser) run() {
 	for p.pos < len(p.lines) {
 		line := p.lines[p.pos]
 
-		if level, text, ok := headingParts(line); ok {
+		if isBlank(line) {
 			p.closeParagraph()
-			p.nodes = append(p.nodes, HeadingNode{Level: level, Content: parseInline(text)})
 			p.pos++
 			continue
 		}
 
-		if isBlank(line) {
+		// Link reference definitions are block-level metadata; skip them.
+		if _, _, ok := parseLinkDef(line); ok {
 			p.closeParagraph()
+			p.pos++
+			continue
+		}
+
+		if level, text, ok := headingParts(line); ok {
+			p.closeParagraph()
+			p.nodes = append(p.nodes, HeadingNode{Level: level, Content: p.parseInline(text)})
 			p.pos++
 			continue
 		}
@@ -102,7 +116,7 @@ func (p *parser) run() {
 		}
 
 		// Paragraph: accumulate lines.
-		p.paraLines = append(p.paraLines, parseInline(line))
+		p.paraLines = append(p.paraLines, p.parseInline(line))
 		p.pos++
 	}
 	p.closeParagraph()
@@ -143,7 +157,7 @@ func (p *parser) parseBlockquote() Node {
 		if len(line) > 2 {
 			text = line[2:]
 		}
-		lines = append(lines, parseInline(text))
+		lines = append(lines, p.parseInline(text))
 		p.pos++
 	}
 	return BlockquoteNode{Lines: lines}
@@ -185,14 +199,13 @@ func (p *parser) parseListAt(baseIndent int, ordered bool) *ListNode {
 				last := &node.Items[len(node.Items)-1]
 				last.Sub = p.parseListAt(indent, thisOrdered)
 			} else {
-				// No previous item — skip the orphaned nested list.
 				p.parseListAt(indent, thisOrdered)
 			}
 			continue
 		}
 
 		// Same indent: new item.
-		item := ListItem{Content: parseInline(text)}
+		item := ListItem{Content: p.parseInline(text)}
 		p.pos++
 
 		// Peek: if the next line is deeper, nest immediately.
@@ -221,14 +234,14 @@ func (p *parser) parseTable() Node {
 
 	node := TableNode{Headers: make([][]InlineNode, len(headers))}
 	for i, h := range headers {
-		node.Headers[i] = parseInline(h)
+		node.Headers[i] = p.parseInline(h)
 	}
 
 	for p.pos < len(p.lines) && isTableRow(p.lines[p.pos]) {
 		cells := splitTableRow(p.lines[p.pos])
 		row := make([][]InlineNode, len(cells))
 		for i, c := range cells {
-			row[i] = parseInline(c)
+			row[i] = p.parseInline(c)
 		}
 		node.Rows = append(node.Rows, row)
 		p.pos++
@@ -243,8 +256,9 @@ func (p *parser) parseTable() Node {
 //
 //	**text** or __text__  →  BoldNode
 //	*text*   or _text_    →  ItalicNode
-//	[text](url)           →  LinkNode
-func parseInline(s string) []InlineNode {
+//	[text](url)           →  LinkNode  (inline)
+//	[text][id]            →  LinkNode  (reference; id looked up in p.refs)
+func (p *parser) parseInline(s string) []InlineNode {
 	var result []InlineNode
 	var buf strings.Builder
 
@@ -260,7 +274,7 @@ func parseInline(s string) []InlineNode {
 		if i+1 < len(s) && s[i] == '*' && s[i+1] == '*' {
 			if j := strings.Index(s[i+2:], "**"); j >= 0 {
 				flush()
-				result = append(result, BoldNode{Content: parseInline(s[i+2 : i+2+j])})
+				result = append(result, BoldNode{Content: p.parseInline(s[i+2 : i+2+j])})
 				i += j + 4
 				continue
 			}
@@ -269,7 +283,7 @@ func parseInline(s string) []InlineNode {
 		if i+1 < len(s) && s[i] == '_' && s[i+1] == '_' {
 			if j := strings.Index(s[i+2:], "__"); j >= 0 {
 				flush()
-				result = append(result, BoldNode{Content: parseInline(s[i+2 : i+2+j])})
+				result = append(result, BoldNode{Content: p.parseInline(s[i+2 : i+2+j])})
 				i += j + 4
 				continue
 			}
@@ -278,7 +292,7 @@ func parseInline(s string) []InlineNode {
 		if s[i] == '*' {
 			if j := strings.IndexByte(s[i+1:], '*'); j >= 0 {
 				flush()
-				result = append(result, ItalicNode{Content: parseInline(s[i+1 : i+1+j])})
+				result = append(result, ItalicNode{Content: p.parseInline(s[i+1 : i+1+j])})
 				i += j + 2
 				continue
 			}
@@ -287,25 +301,46 @@ func parseInline(s string) []InlineNode {
 		if s[i] == '_' {
 			if j := strings.IndexByte(s[i+1:], '_'); j >= 0 {
 				flush()
-				result = append(result, ItalicNode{Content: parseInline(s[i+1 : i+1+j])})
+				result = append(result, ItalicNode{Content: p.parseInline(s[i+1 : i+1+j])})
 				i += j + 2
 				continue
 			}
 		}
-		// Link: [text](url)
+		// Links: [text](url) inline  or  [text][id] reference
 		if s[i] == '[' {
 			rest := s[i+1:]
 			if j := strings.IndexByte(rest, ']'); j >= 0 {
-				if j+1 < len(rest) && rest[j+1] == '(' {
-					urlPart := rest[j+2:]
+				after := rest[j+1:]
+				// Inline link: [text](url)
+				if len(after) > 0 && after[0] == '(' {
+					urlPart := after[1:]
 					if k := strings.IndexByte(urlPart, ')'); k >= 0 {
 						flush()
 						result = append(result, LinkNode{
-							Text: parseInline(rest[:j]),
+							Text: p.parseInline(rest[:j]),
 							URL:  urlPart[:k],
 						})
 						i += 1 + j + 2 + k + 1
 						continue
+					}
+				}
+				// Reference link: [text][id]
+				if len(after) > 0 && after[0] == '[' {
+					idPart := after[1:]
+					if k := strings.IndexByte(idPart, ']'); k >= 0 {
+						id := strings.ToLower(idPart[:k])
+						if url, found := p.refs[id]; found {
+							flush()
+							result = append(result, LinkNode{
+								Text: p.parseInline(rest[:j]),
+								URL:  url,
+							})
+							i += 1 + j + 2 + k + 1
+							continue
+						}
+						p.errs = append(p.errs,
+							fmt.Sprintf("undefined link reference %q", idPart[:k]))
+						// Fall through: add the raw '[' to buf and retry from i+1.
 					}
 				}
 			}
@@ -315,6 +350,54 @@ func parseInline(s string) []InlineNode {
 	}
 	flush()
 	return result
+}
+
+// === --- Link reference definitions ------------------------------------- ===
+
+// parseLinkDef detects a link reference definition of the form:
+//
+//	[id]: url
+//	[id]: <url>
+//
+// Leading whitespace is allowed. id is returned un-lowercased.
+func parseLinkDef(line string) (id, url string, ok bool) {
+	s := strings.TrimLeft(line, " \t")
+	if !strings.HasPrefix(s, "[") {
+		return "", "", false
+	}
+	j := strings.IndexByte(s, ']')
+	if j < 1 { // need at least one char for id
+		return "", "", false
+	}
+	if j+1 >= len(s) || s[j+1] != ':' {
+		return "", "", false
+	}
+	id = s[1:j]
+	rest := strings.TrimSpace(s[j+2:])
+	if rest == "" {
+		return "", "", false
+	}
+	if strings.HasPrefix(rest, "<") {
+		end := strings.IndexByte(rest, '>')
+		if end < 0 {
+			return "", "", false
+		}
+		url = rest[1:end]
+	} else {
+		url = strings.Fields(rest)[0]
+	}
+	return id, url, true
+}
+
+// collectLinkRefs does a pre-pass over all lines to gather link definitions.
+func collectLinkRefs(lines []string) map[string]string {
+	refs := make(map[string]string)
+	for _, line := range lines {
+		if id, url, ok := parseLinkDef(line); ok {
+			refs[strings.ToLower(id)] = url
+		}
+	}
+	return refs
 }
 
 // === --- Predicates ----------------------------------------------------- ===
