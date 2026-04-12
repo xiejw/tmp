@@ -270,6 +270,15 @@ func (p *parser) parseInline(s string) []InlineNode {
 	}
 
 	for i := 0; i < len(s); {
+		// Raw inline: `text`
+		if s[i] == '`' {
+			if j := strings.IndexByte(s[i+1:], '`'); j >= 0 {
+				flush()
+				result = append(result, RawNode{Text: s[i+1 : i+1+j]})
+				i += j + 2
+				continue
+			}
+		}
 		// Bold: ** (must check before *)
 		if i+1 < len(s) && s[i] == '*' && s[i+1] == '*' {
 			if j := strings.Index(s[i+2:], "**"); j >= 0 {

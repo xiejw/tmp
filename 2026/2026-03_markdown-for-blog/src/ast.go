@@ -65,6 +65,7 @@ type TableNode struct {
 
 func (TableNode) nodeKind() string { return "table" }
 
+
 // === --- Inline nodes --------------------------------------------------- ===
 
 // InlineNode is the sealed interface for inline-level content fragments.
@@ -101,3 +102,10 @@ type ItalicNode struct {
 }
 
 func (ItalicNode) inlineKind() string { return "italic" }
+
+// RawNode holds `text` — content emitted verbatim with no further inline parsing.
+type RawNode struct {
+	Text string
+}
+
+func (RawNode) inlineKind() string { return "raw" }

@@ -166,6 +166,8 @@ func (r *htmlRenderer) renderInline(content []InlineNode) {
 			io.WriteString(r.out, `">`)
 			r.renderInline(n.Text)
 			io.WriteString(r.out, `</a>`)
+		case RawNode:
+			io.WriteString(r.out, n.Text)
 		}
 	}
 }

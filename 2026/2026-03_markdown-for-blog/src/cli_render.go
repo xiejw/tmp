@@ -219,6 +219,8 @@ func (r *cliRenderer) renderInline(content []InlineNode) string {
 		case LinkNode:
 			sb.WriteString(ansiUnderline + r.renderInline(n.Text) + ansiReset)
 			sb.WriteString(ansiFgYellow + " (" + n.URL + ")" + ansiReset)
+		case RawNode:
+			sb.WriteString(ansiDim + n.Text + ansiReset)
 		}
 	}
 	return sb.String()

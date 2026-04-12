@@ -32,10 +32,19 @@ make clean
 ## Usage
 
 ```sh
-.build/mdv -i input.md [-o output.html] [-t template.tmpl]
-.build/mdv -cli -i input.md [-o output.txt]
-# -o defaults to stdout; -t ignored when -cli is set
+.build/mdv [-i input.md] [-o output.html] [-t template.tmpl]
 ```
+
+| Invocation | Input | Output |
+|---|---|---|
+| `mdv` | stdin | CLI (ANSI) → stdout |
+| `mdv -i file.md` | file | CLI (ANSI) → stdout |
+| `mdv -i file.md -o out.html` | file | HTML → `out.html` |
+| `mdv -o out.html` | stdin | HTML → `out.html` |
+| `mdv -i file.md -o out.html -t tmpl.tmpl` | file | HTML with template → `out.html` |
+
+Output mode is determined by `-o`: present → HTML render, absent → CLI (ANSI) render.
+`-t` is only meaningful alongside `-o`.
 
 ## Template File Format
 
@@ -56,17 +65,17 @@ Both `begin:` and `end:` blocks are required when `-t` is used.
 Block elements:
 - Headings: `# H1` through `###### H6`
 - Paragraphs (soft line breaks within a paragraph)
-- Fenced code blocks (` ``` ` or `~~~`, with optional language tag)
+- Fenced code blocks (three backstick or `~~~`, with optional language tag)
 - Blockquotes (`> ...`)
 - Unordered lists (`-`, `*`, `+`) and ordered lists, with nesting via indent
 - Tables (pipe-delimited, header + separator + body rows)
-
 Inline elements:
 - Bold: `**text**` or `__text__` → `<strong>`
 - Italic: `*text*` or `_text_` → `<em>`
 - Inline links: `[text](url)` → `<a href="url">`
 - Reference links: `[text][id]` resolved via `[id]: url` definitions
-- HTML escaping of `<`, `>`, `&`
+- Inline raw: `` `text` `` → verbatim, no HTML escaping
+- HTML escaping of `<`, `>`, `&` (except inside inline raw spans)
 
 Note: bold/italic markers are matched greedily (first closing marker wins).
 `_` inside identifiers (e.g. `foo_bar`) should be written in a code span.
@@ -77,7 +86,7 @@ Using `[text][id]` with an undefined `id` is a parse error.
 ```go
 // AST construction
 func Parse(inputPath string) ([]Node, error)
-func ParseLines(lines []string) []Node
+func ParseLines(lines []string) ([]Node, error)
 
 // Rendering
 func RenderHTML(nodes []Node, out io.Writer, tmpl *HtmlTemplate, hooks HeadingHooks) error
@@ -103,6 +112,7 @@ Block nodes implement `Node`:
 - `BlockquoteNode{Lines [][]InlineNode}`
 - `ListNode{Ordered bool; Items []ListItem}` — `ListItem.Sub *ListNode` for nesting
 - `TableNode{Headers [][]InlineNode; Rows [][][]InlineNode}`
+- `RawNode{Text string}` — verbatim inline output, no escaping
 
 Inline nodes implement `InlineNode`:
 - `TextNode{Text string}`

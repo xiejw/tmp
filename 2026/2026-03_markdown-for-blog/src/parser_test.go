@@ -165,6 +165,20 @@ func TestRefLinkUndefinedErrors(t *testing.T) {
 	}
 }
 
+// === --- Inline raw tests ----------------------------------------------- ===
+
+func TestInlineRaw(t *testing.T) {
+	check(t, mdToString(t, "`<b>bold</b>`"), "<p><b>bold</b></p>\n")
+}
+
+func TestInlineRawNotEscaped(t *testing.T) {
+	check(t, mdToString(t, "`a < b`"), "<p>a < b</p>\n")
+}
+
+func TestInlineRawMixedWithText(t *testing.T) {
+	check(t, mdToString(t, "see `<em>here</em>` now"), "<p>see <em>here</em> now</p>\n")
+}
+
 // === --- Bold / italic tests -------------------------------------------- ===
 
 func TestBoldStar(t *testing.T) {
