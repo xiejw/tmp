@@ -1,4 +1,4 @@
-# md2html — Go Markdown-to-HTML Converter
+# mdv — Go Markdown-to-HTML Converter
 
 ## Overview
 
@@ -23,7 +23,7 @@ Makefile
 ## Build
 
 ```sh
-make compile       # produces .build/md2html
+make compile       # produces .build/mdv
 make test
 make fmt
 make clean
@@ -32,8 +32,8 @@ make clean
 ## Usage
 
 ```sh
-.build/md2html -i input.md [-o output.html] [-t template.tmpl]
-.build/md2html -cli -i input.md [-o output.txt]
+.build/mdv -i input.md [-o output.html] [-t template.tmpl]
+.build/mdv -cli -i input.md [-o output.txt]
 # -o defaults to stdout; -t ignored when -cli is set
 ```
 
@@ -72,7 +72,7 @@ Note: bold/italic markers are matched greedily (first closing marker wins).
 `_` inside identifiers (e.g. `foo_bar`) should be written in a code span.
 Using `[text][id]` with an undefined `id` is a parse error.
 
-## Public API (`src/` package `md2html`)
+## Public API (`src/` package `mdv`)
 
 ```go
 // AST construction

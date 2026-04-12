@@ -1,4 +1,4 @@
-package md2html
+package mdv
 
 import (
 	"fmt"

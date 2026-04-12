@@ -1,4 +1,4 @@
-BIN = .build/md2html
+BIN = .build/mdv
 
 compile:
 	mkdir -p .build
@@ -10,7 +10,7 @@ test:
 	go test ./src/...
 
 fmt:
-	go fmt md2html/...
+	go fmt mdv/...
 
 clean:
 	rm -rf .build

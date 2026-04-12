@@ -1,3 +1,3 @@
-module md2html
+module mdv
 
 go 1.21

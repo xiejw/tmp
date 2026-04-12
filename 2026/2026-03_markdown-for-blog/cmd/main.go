@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	md2html "md2html/src"
+	mdv "mdv/src"
 )
 
 func main() {
@@ -16,11 +16,11 @@ func main() {
 	flag.Parse()
 
 	if *inputPath == "" {
-		fmt.Fprintln(os.Stderr, "usage: md2html -i input.md [-o output.html] [-t template.tmpl] [-cli]")
+		fmt.Fprintln(os.Stderr, "usage: mdv -i input.md [-o output.html] [-t template.tmpl] [-cli]")
 		os.Exit(1)
 	}
 
-	nodes, err := md2html.Parse(*inputPath)
+	nodes, err := mdv.Parse(*inputPath)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -38,23 +38,23 @@ func main() {
 	}
 
 	if *cliMode {
-		if err := md2html.RenderCLI(nodes, out); err != nil {
+		if err := mdv.RenderCLI(nodes, out); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 		return
 	}
 
-	var tmpl *md2html.HtmlTemplate
+	var tmpl *mdv.HtmlTemplate
 	if *templatePath != "" {
-		tmpl, err = md2html.ParseTemplate(*templatePath)
+		tmpl, err = mdv.ParseTemplate(*templatePath)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 	}
 
-	if err := md2html.RenderHTML(nodes, out, tmpl, md2html.HeadingHooks{}); err != nil {
+	if err := mdv.RenderHTML(nodes, out, tmpl, mdv.HeadingHooks{}); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
