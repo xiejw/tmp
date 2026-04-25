@@ -2,6 +2,7 @@
 // Usage: chp55_file_lock <seconds> [x]
 //   <seconds>  how long to hold the lock
 //   x          (optional) exclusive lock; default is shared
+//   Demonstrates BSD flock(2) shared and exclusive file locking on .build/test_file.
 #include <sys/file.h>   // flock
 #include <fcntl.h>
 #include <unistd.h>

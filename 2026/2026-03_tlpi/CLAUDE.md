@@ -6,6 +6,15 @@
 - Cmd in folder `cmd` and all headers and source files are in folder `src`.
 - Function naming: `TypeOperation()`
 - Each `cmd/` file must begin with a usage comment block at the top (before includes).
+  The block must follow this exact format:
+  ```
+  // cmd/<filename>.cc
+  // Usage: <binary> <args...>
+  //   <arg>  description of argument
+  //   ...
+  //   <one-line description of what the program does>
+  ```
+  The last line of the block is a prose sentence describing what the program does.
 
 ## Coding Style
 
