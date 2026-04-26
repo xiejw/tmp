@@ -1,5 +1,5 @@
 CXX      = c++
-CXXFLAGS = -Wall -Werror -pedantic -Wextra -fno-rtti -fno-exceptions -std=c++17
+CXXFLAGS = -Wall -Werror -pedantic -Wextra -Wfatal-errors -Wconversion -fno-rtti -fno-exceptions -std=c++17
 BUILD    = .build
 
 CMDS = $(BUILD)/chp54_shm $(BUILD)/chp55_daemon_pid $(BUILD)/chp55_file_lock

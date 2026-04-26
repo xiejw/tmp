@@ -34,18 +34,18 @@ struct SharedStrings {
 // === --- Writer --------------------------------------------------------- ===
 //
 
-bool ShmWrite(int count, char* const* strs, std::string* err_msg) {
+int WriteShm(int count, char* const* strs, std::string* err_msg) {
     int fd = shm_open(kShmName, O_CREAT | O_RDWR, 0600);
     if (fd == -1) {
         *err_msg = std::string("shm_open: ") + strerror(errno);
-        return true;
+        return -1;
     }
 
     if (ftruncate(fd, (off_t)sizeof(SharedStrings)) == -1) {
         *err_msg = std::string("ftruncate: ") + strerror(errno);
         close(fd);
         shm_unlink(kShmName);
-        return true;
+        return -1;
     }
 
     void* addr = mmap(nullptr, sizeof(SharedStrings),
@@ -54,13 +54,13 @@ bool ShmWrite(int count, char* const* strs, std::string* err_msg) {
     if (addr == MAP_FAILED) {
         *err_msg = std::string("mmap: ") + strerror(errno);
         shm_unlink(kShmName);
-        return true;
+        return -1;
     }
 
     SharedStrings* shm = static_cast<SharedStrings*>(addr);
     shm->count = count;
     for (int i = 0; i < count; i++) {
-        strncpy(shm->strings[i], strs[i], kMaxStrLen - 1);
+        strncpy(shm->strings[i], strs[i], (size_t)(kMaxStrLen - 1));
         shm->strings[i][kMaxStrLen - 1] = '\0';
     }
 
@@ -71,24 +71,24 @@ bool ShmWrite(int count, char* const* strs, std::string* err_msg) {
 
     munmap(addr, sizeof(SharedStrings));
     shm_unlink(kShmName);
-    return false;
+    return 0;
 }
 
 // === --- Reader --------------------------------------------------------- ===
 //
 
-bool ShmRead(std::string* err_msg) {
+int ReadShm(std::string* err_msg) {
     int fd = shm_open(kShmName, O_RDONLY, 0);
     if (fd == -1) {
         *err_msg = std::string("shm_open: ") + strerror(errno);
-        return true;
+        return -1;
     }
 
     struct stat st;
     if (fstat(fd, &st) == -1) {
         *err_msg = std::string("fstat: ") + strerror(errno);
         close(fd);
-        return true;
+        return -1;
     }
 
     if ((size_t)st.st_size != sizeof(SharedStrings)) {
@@ -96,14 +96,14 @@ bool ShmRead(std::string* err_msg) {
                    std::to_string(sizeof(SharedStrings)) + ", got " +
                    std::to_string((size_t)st.st_size);
         close(fd);
-        return true;
+        return -1;
     }
 
     void* addr = mmap(nullptr, sizeof(SharedStrings), PROT_READ, MAP_SHARED, fd, 0);
     close(fd);
     if (addr == MAP_FAILED) {
         *err_msg = std::string("mmap: ") + strerror(errno);
-        return true;
+        return -1;
     }
 
     const SharedStrings* shm = static_cast<const SharedStrings*>(addr);
@@ -113,7 +113,7 @@ bool ShmRead(std::string* err_msg) {
     }
 
     munmap(addr, sizeof(SharedStrings));
-    return false;
+    return 0;
 }
 
 }  // namespace forge
@@ -134,12 +134,12 @@ int main(int argc, char* argv[]) {
         }
         int count = argc - 2;
         if (count > forge::kMaxStrings) count = forge::kMaxStrings;
-        if (forge::ShmWrite(count, argv + 2, &err_msg)) {
+        if (forge::WriteShm(count, argv + 2, &err_msg) == -1) {
             fprintf(stderr, "error: %s\n", err_msg.c_str());
             return EXIT_FAILURE;
         }
     } else if (strcmp(argv[1], "read") == 0) {
-        if (forge::ShmRead(&err_msg)) {
+        if (forge::ReadShm(&err_msg) == -1) {
             fprintf(stderr, "error: %s\n", err_msg.c_str());
             return EXIT_FAILURE;
         }

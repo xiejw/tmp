@@ -18,7 +18,8 @@
 
 namespace forge {
 
-int CreateAndLockPidFile(const char* path, std::string* err_msg) {
+/* Return 0 on success with fd written to *fd_out, -1 on error. */
+int LockPidFile(const char* path, int* fd_out, std::string* err_msg) {
     int fd = open(path, O_CREAT | O_RDWR, 0644);
     if (fd == -1) {
         *err_msg = std::string("open failed: ") + strerror(errno);
@@ -48,13 +49,14 @@ int CreateAndLockPidFile(const char* path, std::string* err_msg) {
 
     char buf[32];
     int n = snprintf(buf, sizeof(buf), "%d\n", (int)getpid());
-    if (write(fd, buf, n) != n) {
+    if (write(fd, buf, (size_t)n) != n) {
         *err_msg = std::string("write failed: ") + strerror(errno);
         close(fd);
         return -1;
     }
 
-    return fd;
+    *fd_out = fd;
+    return 0;
 }
 
 }  // namespace forge
@@ -63,8 +65,8 @@ int main(int argc, char* argv[]) {
     const char* pid_file = (argc > 1) ? argv[1] : ".build/daemon.pid";
 
     std::string err_msg;
-    int fd = forge::CreateAndLockPidFile(pid_file, &err_msg);
-    if (fd == -1) {
+    int fd = -1;
+    if (forge::LockPidFile(pid_file, &fd, &err_msg) == -1) {
         fprintf(stderr, "error: %s\n", err_msg.c_str());
         return EXIT_FAILURE;
     }
