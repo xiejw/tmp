@@ -2,6 +2,11 @@
 // Usage: chp55_daemon_pid [pid_file]
 //   pid_file  path to pid file (default: .build/daemon.pid)
 //   Creates and locks a pid file, writes current PID, sleeps 5s, then truncates and exits.
+//
+// Example:
+//   terminal 1: .build/chp55_daemon_pid
+//   terminal 2: .build/chp55_daemon_pid   # fails: pid file locked by another instance
+//   terminal 1: exits after 5s, releasing the lock
 
 #include <fcntl.h>
 #include <unistd.h>

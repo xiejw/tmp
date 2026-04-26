@@ -13,8 +13,13 @@
   //   <arg>  description of argument
   //   ...
   //   <one-line description of what the program does>
+  //
+  // Example:
+  //   $ .build/<binary> <example args>
+  //   <expected output or next step>
   ```
-  The last line of the block is a prose sentence describing what the program does.
+  The last line before the example is a prose sentence describing what the program does.
+  The example section shows a concrete invocation (or sequence for multi-process programs).
 
 ## Coding Style
 
